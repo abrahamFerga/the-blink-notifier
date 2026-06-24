@@ -185,20 +185,24 @@ AUMID from `AppxManifest` automatically. The portable self-contained EXE has no 
 
 ### Decision
 
-The portable EXE will **self-register its AUMID on first launch** by writing to
-`HKCU\Software\Classes\AppUserModelId\BlinkNotifier.App` (the key `CommunityToolkit.WinUI.Notifications`
-reads). `StartupRegistrar.RegisterAumidAsync()` is called at app startup before
-`ToastNotificationManagerCompat.OnActivated` is wired. No installer is required; no elevated
-permissions are needed (HKCU is per-user).
+**`Microsoft.Toolkit.Uwp.Notifications` v7.1.3 handles AUMID and COM-server registration
+automatically** for unpackaged apps when `ToastNotificationManagerCompat.OnActivated` is first
+subscribed. On the first subscription in an unpackaged process, the library writes AUMID and COM
+CLSID entries under `HKCU\Software\Classes` (using the executable path as the derived identifier)
+and registers an in-process COM activator. No installer, no elevation, and no additional code in
+`StartupRegistrar` is required.
 
 ### Consequences
 
-- **Positive**: Full action-button toasts in the portable EXE with no separate installer; HKCU
-  write requires no elevation; `ToastNotificationManagerCompat` handles the rest.
-- **Negative**: The AUMID entry persists in the registry after uninstall of the portable EXE
-  (no uninstaller exists); this is a benign orphan key in HKCU.
-- **Neutral**: The MSIX artifact does not call `RegisterAumidAsync()` — the code path is guarded
-  by `DesktopBridge.IsRunningAsPackaged()`.
+- **Positive**: Full action-button toasts in the portable EXE with no separate installer; all
+  registry writes are HKCU (per-user, no elevation); a single `OnActivated` subscription handles
+  both packaged and unpackaged paths.
+- **Negative**: The AUMID is derived from the executable path — if the user moves the portable
+  EXE to a different location, the previously-registered AUMID becomes a stale orphan in HKCU
+  and a new one is written at the new path. This is benign: old stale entries are ignored by
+  Windows and the new path registers successfully.
+- **Neutral**: The MSIX artifact's package identity is used instead; the library's unpackaged
+  code path is skipped when `Windows.ApplicationModel.Package.Current` succeeds.
 
 ### Alternatives considered
 
@@ -271,14 +275,15 @@ graceful shutdown.
 
 ### Consequences
 
-- **Positive**: `IHostedService` for both background workers; `IOptions<T>` with startup
-  validation; `ILogger<T>` unified with Serilog sink; clean `StopAsync()` cancellation via
-  `CancellationToken`; no manual thread lifecycle code.
+- **Positive**: `IHostedService` for both background workers; `ILogger<T>` unified with Serilog
+  sink; clean `StopAsync()` cancellation via `CancellationToken`; `IServiceProvider` owns singleton
+  lifetime — `_host.Dispose()` disposes all `IDisposable` singletons; no manual thread lifecycle code.
 - **Negative**: The WPF STA thread and the Generic Host's thread-pool async model require careful
   threading — the WPF dispatcher must not be blocked from a `HostedService`; all UI interactions
-  route through `Dispatcher.InvokeAsync()`.
-- **Neutral**: The Generic Host's default `appsettings.json` configuration provider is disabled;
-  configuration comes exclusively from `JsonSettingsStore` via a custom `IConfigurationSource`.
+  route through `Dispatcher.Invoke()`.
+- **Neutral**: The Generic Host's default `appsettings.json` configuration provider is unused;
+  configuration comes exclusively from `ISettingsStore.LoadAsync()` at runtime. `IOptions<T>` is
+  not registered — settings validation is performed by `SettingsViewModel.Validate()` before save.
 
 ### Alternatives considered
 
