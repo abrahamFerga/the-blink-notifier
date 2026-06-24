@@ -5,7 +5,11 @@
   "cloud": "none",
   "connectors": [],
   "capabilities": [],
-  "github": null,
+  "github": {
+    "repo": "abrahamFerga/the-blink-notifier",
+    "project": 3,
+    "visibility": "public"
+  },
   "skills": {
     "self": {
       "marketplace": "my-skills",
