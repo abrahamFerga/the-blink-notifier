@@ -81,4 +81,18 @@ public sealed class SnoozeStateMachineTests
 
         Assert.Equal(clock.GetUtcNow() + duration, sm.SnoozedUntil);
     }
+
+    [Fact]
+    public void Snooze_WhileAlreadySnoozed_ReplacesExistingSnooze()
+    {
+        var clock = new FakeTimeProvider();
+        var sm = new SnoozeStateMachine(clock);
+
+        sm.Snooze(TimeSpan.FromMinutes(60)); // first snooze: 60 min
+        clock.Advance(TimeSpan.FromMinutes(1));
+        sm.Snooze(TimeSpan.FromMinutes(5));  // second snooze: replaces with 5 min
+
+        Assert.True(sm.IsSnoozed);
+        Assert.Equal(clock.GetUtcNow() + TimeSpan.FromMinutes(5), sm.SnoozedUntil);
+    }
 }
