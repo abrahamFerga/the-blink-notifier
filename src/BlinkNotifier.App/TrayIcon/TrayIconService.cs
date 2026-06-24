@@ -47,6 +47,10 @@ public sealed class TrayIconService : IDisposable
         {
             if (e.PropertyName == nameof(TrayIconViewModel.ToolTip))
                 _taskbarIcon.ToolTipText = _viewModel.ToolTip;
+            if (e.PropertyName == nameof(TrayIconViewModel.IsRunning))
+                _taskbarIcon.Icon = _viewModel.IsPaused   ? _iconPaused
+                                  : _viewModel.IsRunning  ? _iconActive
+                                  : _iconStopped;
         };
 
         _viewModel.TrayIconStateChanged += isPaused =>
