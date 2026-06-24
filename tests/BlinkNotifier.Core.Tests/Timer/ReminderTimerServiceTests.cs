@@ -195,6 +195,25 @@ public sealed class ReminderTimerServiceTests
     }
 
     [Fact]
+    public async Task FiresRepeatedly_AfterEachInterval()
+    {
+        var h = Build(intervalMinutes: 20);
+        using var cts = new CancellationTokenSource();
+        await h.Sut.StartAsync(cts.Token);
+        await Task.Delay(50);
+
+        await AdvanceAndYield(h.Clock, TimeSpan.FromMinutes(20));
+        Assert.Equal(1, h.Dispatcher.Count);
+
+        await Task.Delay(50); // let loop re-register its timer after first fire
+        await AdvanceAndYield(h.Clock, TimeSpan.FromMinutes(20));
+        Assert.Equal(2, h.Dispatcher.Count);
+
+        await cts.CancelAsync();
+        await h.Sut.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task ScheduleWindow_InactiveDay_SuppressesFiring()
     {
         // ActiveDays = [] means ScheduleGuard.ShouldFire always returns false,
