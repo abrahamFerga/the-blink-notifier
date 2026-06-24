@@ -78,7 +78,7 @@ src/
   BlinkNotifier.Core/                 ← Class library (net10.0-windows10.0.17763.0)
     Timer/
       ReminderTimerService.cs         ← IHostedService; PeriodicTimer; full gate logic
-      SnoozeStateMachine.cs           ← thread-safe; IsSnoozed / SnoozedUntil; OnExpired event
+      SnoozeStateMachine.cs           ← thread-safe; IsSnoozed / SnoozedUntil; Snooze() / Clear()
     Toast/
       ToastDispatcher.cs              ← ToastContentBuilder; ToastNotificationManagerCompat
       ToastActivationHandler.cs       ← static OnActivated; routes snooze / dismiss args
@@ -147,7 +147,7 @@ No circular dependencies. `BlinkNotifier.Packaging` references `BlinkNotifier.Ap
 | **Configuration** | `IOptions<BlinkSettings>` bound from `JsonSettingsStore`; validated at startup by `BlinkSettingsValidator` (`IValidateOptions<T>`); defaults written on first run if file absent | ADR-0013 |
 | **Secrets** | None — the app contains no credentials, tokens, or keys | ADR-0012 |
 | **Background jobs** | Two `IHostedService` registrations: `ReminderTimerService` (user-configured interval) and `FullscreenPoller` (5-second fixed interval); both hosted by .NET Generic Host | ADR-0007 |
-| **Single-instance enforcement** | Global `Mutex` named `Global\\BlinkNotifier-SingleInstance` in `Program.cs`; second launch brings first instance to foreground (via `WM_USER` message) and exits | ADR-0006 |
+| **Single-instance enforcement** | Global `Mutex` named `Global\\BlinkNotifier-SingleInstance` in `App.xaml.cs`; second launch brings first instance to foreground (via `WM_USER` message) and exits | ADR-0006 |
 | **Outbox / idempotency** | Not required — all side effects are local and fire-and-forget; no external system whose delivery must be guaranteed | ADR-0016 |
 | **GDPR / PII** | No personal data collected or transmitted; `[Pii]` attribute inapplicable; Store privacy policy at `docs/privacy.html` states "no data collected" | ADR-0009 |
 | **Accessibility** | All WPF controls set `AutomationProperties.Name`; tray icon sets `ToolTipText`; toast action buttons inherit accessible names from button label text; verified with Accessibility Insights for Windows | SPEC regulatory constraint |
@@ -220,10 +220,10 @@ and add a migration branch for any future format change.
 The only external "API surface" is the Windows Toast COM activation entry point:
 
 - **Inbound:** `ToastNotificationManagerCompat.OnActivated` static delegate receives
-  `arguments` string (`action=snooze&duration=5`, `action=snooze&duration=15`,
-  `action=snooze&duration=60`, `action=dismiss`) and `userInput` dictionary.
-  Routes: `snooze` → `SnoozeStateMachine.Snooze(TimeSpan.FromMinutes(duration))`;
-  `dismiss` → `ReminderTimerService.ResetTimer()`.
+  `arguments` string (`action=snooze;duration=5`, `action=snooze;duration=15`,
+  `action=snooze;duration=60`, `action=dismiss`) and `userInput` dictionary.
+  Routes: `snooze` → `SnoozeStateMachine.Snooze(TimeSpan.FromMinutes(duration))` + `ResetTimer()`;
+  `dismiss` → `SnoozeStateMachine.Clear()` + `ResetTimer()`.
   Toast expiry (no user interaction) is treated as `dismiss`.
 
 ---
