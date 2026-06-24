@@ -5,7 +5,7 @@ back-reference); the old one is never deleted or renumbered.
 
 ---
 
-## ADR-0001: WPF (.NET 9) over WinUI 3 as the UI framework
+## ADR-0001: WPF (.NET 10) over WinUI 3 as the UI framework
 
 - **Status**: accepted
 - **Date**: 2026-06-24
@@ -14,12 +14,12 @@ back-reference); the old one is never deleted or renumbered.
 ### Context
 
 The app needs a system tray icon, a settings window, and a first-run wizard on Windows 10 and 11.
-Two viable framework choices exist: WPF (.NET 9) and WinUI 3 (Windows App SDK 1.x). The tray
+Two viable framework choices exist: WPF (.NET 10) and WinUI 3 (Windows App SDK 1.x). The tray
 icon library and toast stack decisions (ADR-0002, ADR-0003) depend on this choice.
 
 ### Decision
 
-We will use **WPF on .NET 9**. WPF supports Windows 10 1809+ (the minimum target), has the
+We will use **WPF on .NET 10**. WPF supports Windows 10 1809+ (the minimum target), has the
 mature `Hardcodet.NotifyIcon.Wpf` ecosystem for tray icons, requires no WinAppSdk bootstrapper,
 and ships no additional redistributable beyond the .NET runtime already bundled in the
 self-contained EXE.
@@ -249,7 +249,7 @@ and exits with code 0.
 
 ---
 
-## ADR-0007: .NET 9 Generic Host (IHostBuilder) as the application backbone
+## ADR-0007: .NET 10 Generic Host (IHostBuilder) as the application backbone
 
 - **Status**: accepted
 - **Date**: 2026-06-24
@@ -264,7 +264,7 @@ bare WPF `App.xaml.cs` with manual lifecycle management.
 
 ### Decision
 
-We will use the **.NET 9 Generic Host** (`Host.CreateApplicationBuilder()`) as the DI container,
+We will use the **.NET 10 Generic Host** (`Host.CreateApplicationBuilder()`) as the DI container,
 configuration system, logging infrastructure, and `IHostedService` runner. The WPF pump is
 started inside `IHostedService.StartAsync()` on the STA thread; `IHostApplicationLifetime` drives
 graceful shutdown.
@@ -495,7 +495,7 @@ relational data.
 ### Decision
 
 We will use **`System.Text.Json` serialisation to a local JSON file** (`BlinkSettings.json`).
-No database engine, no ORM, no migrations. `System.Text.Json` ships in the .NET 9 runtime; no
+No database engine, no ORM, no migrations. `System.Text.Json` ships in the .NET 10 runtime; no
 additional dependency is required.
 
 ### Consequences

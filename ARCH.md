@@ -28,9 +28,9 @@ service, daemon, or API server.
 
 | Container | Type | Technology | Purpose |
 |---|---|---|---|
-| `BlinkNotifier.App` | WPF application project | WPF .NET 9, Generic Host | Entry point; single-instance enforcement; system tray icon; first-run wizard; settings window shell |
-| `BlinkNotifier.Core` | Class library | .NET 9, WinRT interop | Timer engine, toast dispatch, fullscreen polling, snooze state machine, COM activation callback handler |
-| `BlinkNotifier.Settings` | Class library | .NET 9, System.Text.Json | Settings model (`BlinkSettings`), `IOptions<T>` validation, JSON persistence to `%LOCALAPPDATA%` |
+| `BlinkNotifier.App` | WPF application project | WPF .NET 10, Generic Host | Entry point; single-instance enforcement; system tray icon; first-run wizard; settings window shell |
+| `BlinkNotifier.Core` | Class library | .NET 10, WinRT interop | Timer engine, toast dispatch, fullscreen polling, snooze state machine, COM activation callback handler |
+| `BlinkNotifier.Settings` | Class library | .NET 10, System.Text.Json | Settings model (`BlinkSettings`), `IOptions<T>` validation, JSON persistence to `%LOCALAPPDATA%` |
 | `BlinkSettings.json` | Persistent store | JSON file at `%LOCALAPPDATA%\BlinkNotifier\settings.json` | All app state: interval, schedule, snooze options, auto-launch flag, schema version |
 | `Windows Notification System` | External system | WinRT `ToastNotificationManager` via `CommunityToolkit.WinUI.Notifications` | Renders toast notifications; routes COM activation callbacks |
 
@@ -62,9 +62,8 @@ Diagram: `docs/diagrams/c3-components-core.puml`
 
 ```
 src/
-  BlinkNotifier.App/                  ← WPF project (.NET 9, OutputType=WinExe)
-    Program.cs                        ← single-instance Mutex; builds Generic Host; starts WPF pump
-    App.xaml / App.xaml.cs           ← WPF Application; owns IHost lifetime
+  BlinkNotifier.App/                  ← WPF project (.NET 10, OutputType=WinExe)
+    App.xaml / App.xaml.cs           ← WPF Application; single-instance Mutex; builds Generic Host; owns IHost lifetime
     TrayIcon/
       TrayIconService.cs              ← wraps Hardcodet NotifyIcon; wires commands from ViewModel
       TrayIconViewModel.cs            ← Start/Stop/Settings/Exit; observes FullscreenState for PAUSED badge
@@ -76,7 +75,7 @@ src/
     Startup/
       StartupRegistrar.cs             ← MSIX path: StartupTask API; portable path: HKCU Run key
 
-  BlinkNotifier.Core/                 ← Class library (net9.0-windows10.0.17763.0)
+  BlinkNotifier.Core/                 ← Class library (net10.0-windows10.0.17763.0)
     Timer/
       ReminderTimerService.cs         ← IHostedService; PeriodicTimer; full gate logic
       SnoozeStateMachine.cs           ← thread-safe; IsSnoozed / SnoozedUntil; OnExpired event
@@ -91,7 +90,7 @@ src/
       NativeMethods.cs                ← P/Invoke declarations
     CoreServiceExtensions.cs          ← IServiceCollection.AddBlinkCore()
 
-  BlinkNotifier.Settings/             ← Class library (net9.0)
+  BlinkNotifier.Settings/             ← Class library (net10.0)
     BlinkSettings.cs                  ← POCO: all persisted fields + SchemaVersion
     ISettingsStore.cs                 ← Task<BlinkSettings> LoadAsync(); Task SaveAsync(BlinkSettings)
     JsonSettingsStore.cs              ← System.Text.Json; atomic write (temp + rename); migration guard
@@ -204,8 +203,8 @@ DateTimeOffset? FullscreenEnteredAt
 ```
 
 **Write strategy:** `JsonSettingsStore.SaveAsync()` serialises to a temp file in the same
-directory, then calls `File.Replace()` (atomic rename) to swap it over the live file — prevents
-corruption on crash mid-write.
+directory, then calls `File.Move(overwrite: true)` to swap it over the live file — prevents
+corruption on crash mid-write and handles the first-save case where the destination doesn't yet exist.
 
 **Migration guard:** `JsonSettingsStore.LoadAsync()` compares `SchemaVersion` against the
 current constant; if older, a `Migrate(int from, BlinkSettings raw)` method transforms the raw
