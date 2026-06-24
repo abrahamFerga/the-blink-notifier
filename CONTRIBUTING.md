@@ -41,6 +41,7 @@ Use the [Bug report](.github/ISSUE_TEMPLATE/bug_report.yml) issue template — e
 ## Code style
 
 - C# 13, nullable enabled, implicit usings enabled — match the existing style.
+- Run `dotnet format` before committing. CI enforces `dotnet format --verify-no-changes` and will fail on whitespace/style drift.
 - No `Console.WriteLine` in service code; use `ILogger<T>`.
 - No new external dependencies without discussion in an issue first.
 
