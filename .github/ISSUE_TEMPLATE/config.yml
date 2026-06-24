@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question / discuss
+    url: https://github.com/abrahamFerga/the-blink-notifier/discussions
+    about: Use GitHub Discussions for questions and general feedback.
