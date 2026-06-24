@@ -72,6 +72,20 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadAsync_WithUnknownSchemaVersion_ReturnsDefaults()
+    {
+        // SchemaVersion 0 is a hypothetical pre-v1 format; the Migrate() switch
+        // falls through to the default case and returns a fresh BlinkSettings.
+        await File.WriteAllTextAsync(_settingsPath,
+            """{"SchemaVersion":0,"ReminderIntervalMinutes":5}""");
+
+        var settings = await _sut.LoadAsync();
+
+        Assert.Equal(20, settings.ReminderIntervalMinutes); // default, not 5
+        Assert.Equal(1, settings.SchemaVersion);            // current schema
+    }
+
+    [Fact]
     public void DefaultSettings_HaveSchemaVersion1()
     {
         Assert.Equal(1, new BlinkSettings().SchemaVersion);
