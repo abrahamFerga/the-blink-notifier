@@ -7,6 +7,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Schedule settings could be saved with no active days selected when checkboxes were changed
+  while the schedule was already enabled (day-setter validation was not re-triggered).
+
 ## [1.0.0] — planned
 
 ### Added

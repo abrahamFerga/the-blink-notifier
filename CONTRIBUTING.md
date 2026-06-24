@@ -11,9 +11,13 @@ Thanks for considering a contribution. Here's what you need to know.
 ```powershell
 git clone https://github.com/abrahamFerga/the-blink-notifier.git
 cd the-blink-notifier
-dotnet build
-dotnet test
+dotnet build --configuration Release
+dotnet test --configuration Release --no-build
 ```
+
+> **Note for .NET SDK 10+**: running `dotnet test` directly (build + test in one step) can
+> trigger a Terminal Logger file-lock race on Windows. The two-step form above avoids it.
+> CI always uses this form.
 
 ## Project layout
 
