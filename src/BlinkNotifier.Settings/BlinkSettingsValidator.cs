@@ -15,6 +15,9 @@ public sealed class BlinkSettingsValidator : IValidateOptions<BlinkSettings>
         if (options.ScheduleEnabled && options.ScheduleStartTime >= options.ScheduleEndTime)
             errors.Add("ScheduleStartTime must be earlier than ScheduleEndTime.");
 
+        if (options.ScheduleEnabled && options.ActiveDays.Length == 0)
+            errors.Add("ActiveDays must contain at least one day when schedule is enabled.");
+
         if (options.SnoozeOptionsMinutes.Length == 0)
             errors.Add("SnoozeOptionsMinutes must contain at least one duration.");
 

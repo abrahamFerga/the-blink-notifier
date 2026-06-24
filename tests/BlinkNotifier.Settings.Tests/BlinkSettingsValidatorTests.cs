@@ -46,4 +46,28 @@ public sealed class BlinkSettingsValidatorTests
         var result = _sut.Validate(null, s);
         Assert.NotEqual(ValidateOptionsResult.Success, result);
     }
+
+    [Fact]
+    public void NegativeSnoozeDuration_FailsValidation()
+    {
+        var s = new BlinkSettings { SnoozeOptionsMinutes = [5, -1] };
+        var result = _sut.Validate(null, s);
+        Assert.NotEqual(ValidateOptionsResult.Success, result);
+    }
+
+    [Fact]
+    public void EmptyActiveDays_WhenScheduleEnabled_FailsValidation()
+    {
+        var s = new BlinkSettings { ScheduleEnabled = true, ActiveDays = [] };
+        var result = _sut.Validate(null, s);
+        Assert.NotEqual(ValidateOptionsResult.Success, result);
+    }
+
+    [Fact]
+    public void EmptyActiveDays_WhenScheduleDisabled_PassesValidation()
+    {
+        var s = new BlinkSettings { ScheduleEnabled = false, ActiveDays = [] };
+        var result = _sut.Validate(null, s);
+        Assert.Equal(ValidateOptionsResult.Success, result);
+    }
 }

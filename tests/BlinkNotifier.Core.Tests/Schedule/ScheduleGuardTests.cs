@@ -56,4 +56,48 @@ public sealed class ScheduleGuardTests
         var now = new DateTimeOffset(2026, 6, 24, 10, 0, 0, TimeSpan.Zero);
         Assert.False(ScheduleGuard.ShouldFire(now, settings));
     }
+
+    [Fact]
+    public void ShouldFire_ExactlyAtStartTime_ReturnsTrue()
+    {
+        var settings = new BlinkSettings
+        {
+            ScheduleEnabled   = true,
+            ScheduleStartTime = TimeSpan.FromHours(9),
+            ScheduleEndTime   = TimeSpan.FromHours(18),
+            ActiveDays        = [DayOfWeek.Wednesday],
+        };
+        // Exactly 09:00 — boundary is inclusive (>=)
+        var now = new DateTimeOffset(2026, 6, 24, 9, 0, 0, TimeSpan.Zero);
+        Assert.True(ScheduleGuard.ShouldFire(now, settings));
+    }
+
+    [Fact]
+    public void ShouldFire_ExactlyAtEndTime_ReturnsFalse()
+    {
+        var settings = new BlinkSettings
+        {
+            ScheduleEnabled   = true,
+            ScheduleStartTime = TimeSpan.FromHours(9),
+            ScheduleEndTime   = TimeSpan.FromHours(18),
+            ActiveDays        = [DayOfWeek.Wednesday],
+        };
+        // Exactly 18:00 — end boundary is exclusive (<)
+        var now = new DateTimeOffset(2026, 6, 24, 18, 0, 0, TimeSpan.Zero);
+        Assert.False(ScheduleGuard.ShouldFire(now, settings));
+    }
+
+    [Fact]
+    public void ShouldFire_EmptyActiveDays_WhenScheduleEnabled_ReturnsFalse()
+    {
+        var settings = new BlinkSettings
+        {
+            ScheduleEnabled   = true,
+            ScheduleStartTime = TimeSpan.FromHours(9),
+            ScheduleEndTime   = TimeSpan.FromHours(18),
+            ActiveDays        = [],
+        };
+        var now = new DateTimeOffset(2026, 6, 24, 10, 0, 0, TimeSpan.Zero);
+        Assert.False(ScheduleGuard.ShouldFire(now, settings));
+    }
 }
