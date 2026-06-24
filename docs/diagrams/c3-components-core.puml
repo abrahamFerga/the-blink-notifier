@@ -7,45 +7,43 @@ title C4 L3 — Components: BlinkNotifier.Core
 
 Container_Boundary(core, "BlinkNotifier.Core") {
 
-    Component(timer_svc, "ReminderTimerService", "IHostedService\nPeriodicTimer", "Schedules ticks at user-configured interval; checks ScheduleGuard, SnoozeStateMachine, and FullscreenState before each dispatch; resets after each notification event; cancels cleanly on Host shutdown")
+    Component(timer_svc, "ReminderTimerService", "IHostedService\nTask.Delay loop", "Schedules ticks at user-configured interval; checks ScheduleGuard, SnoozeStateMachine, and FullscreenState before each dispatch; calls ResetTimer() on snooze/dismiss; cancels cleanly on Host shutdown")
 
-    Component(snooze_sm, "SnoozeStateMachine", "Thread-safe singleton", "Tracks IsSnoozed and SnoozedUntil; exposes Snooze(duration) and Clear(); fires OnExpired event when snooze lapses so ReminderTimerService can restart the interval")
+    Component(snooze_sm, "SnoozeStateMachine", "Thread-safe singleton", "Tracks IsSnoozed and SnoozedUntil; exposes Snooze(duration) and Clear(); snooze expiry detected by polling IsSnoozed in the timer loop")
 
-    Component(schedule_guard, "ScheduleGuard", "Singleton service\nPure function", "ShouldFire(DateTimeOffset now, BlinkSettings s) — compares current time against ScheduleStartTime/EndTime and ActiveDays; no side effects; easy unit-test target")
+    Component(schedule_guard, "ScheduleGuard", "Static class\nPure function", "ShouldFire(DateTimeOffset now, BlinkSettings s) — compares current time against ScheduleStartTime/EndTime and ActiveDays; no side effects; easy unit-test target")
 
-    Component(fullscreen_poller, "FullscreenPoller", "IHostedService\nPeriodicTimer (5 s)", "Polls foreground window geometry every 5 seconds; calls NativeMethods; updates FullscreenState on transition; publishes FullscreenChanged event")
+    Component(fullscreen_poller, "FullscreenPoller", "IHostedService\nPeriodicTimer (5 s)", "Polls foreground window geometry every 5 seconds; calls NativeMethods; updates FullscreenState on transition; fires FullscreenChanged event")
 
     Component(fullscreen_state, "FullscreenState", "Singleton\nIn-memory", "IsFullscreenActive and FullscreenEnteredAt; written by FullscreenPoller; read by ReminderTimerService and TrayIconViewModel (for PAUSED badge)")
 
-    Component(toast_dispatcher, "ToastDispatcher", "Service", "Builds ToastContent via ToastContentBuilder (action buttons: Snooze 5/15/60, Dismiss); calls ToastNotificationManagerCompat.CreateToastNotifier().Show(); handles AUMID for both MSIX and portable paths")
+    Component(toast_dispatcher, "ToastDispatcher", "Service\nIToastDispatcher", "Builds ToastContent via ToastContentBuilder (action buttons: Snooze 5/15/60 min with action=snooze;duration=N, Dismiss with action=dismiss); calls ToastNotificationManagerCompat.Show(); handles AUMID for both MSIX and portable paths")
 
-    Component(toast_handler, "ToastActivationHandler", "Static callback\nOnActivated delegate", "Registered once via ToastNotificationManagerCompat.OnActivated; parses arguments string (action=snooze&duration=N, action=dismiss); routes to SnoozeStateMachine.Snooze() or ReminderTimerService.ResetTimer()")
+    Component(toast_handler, "ToastActivationHandler", "Static callback\nOnActivated delegate", "Registered once via ToastNotificationManagerCompat.OnActivated; parses arguments (action=snooze;duration=N or action=dismiss); routes: snooze -> SnoozeStateMachine.Snooze() + ResetTimer(); dismiss -> SnoozeStateMachine.Clear() + ResetTimer()")
 
     Component(native_methods, "NativeMethods", "Static class\nP/Invoke", "GetForegroundWindow, GetWindowRect, MonitorFromWindow, GetMonitorInfo — all from user32.dll; used exclusively by FullscreenPoller")
 
 }
 
-Container_Ext(app, "BlinkNotifier.App", "WPF .NET 9", "Subscribes to FullscreenChanged for tray badge; issues Start/Stop commands to ReminderTimerService")
-Container_Ext(settings_lib, "BlinkNotifier.Settings", ".NET 9 library", "Provides IOptions<BlinkSettings> to ReminderTimerService and ScheduleGuard")
+Container_Ext(app, "BlinkNotifier.App", "WPF .NET 10", "Subscribes to FullscreenChanged for tray badge; issues Start/Stop commands to ReminderTimerService")
+Container_Ext(settings_lib, "BlinkNotifier.Settings", ".NET 10 library", "Provides IOptions<BlinkSettings> to ReminderTimerService and ScheduleGuard")
 System_Ext(wintoast, "Windows Notification System", "WinRT")
 
 Rel(app, timer_svc, "Start / Stop via IHostedService control", "Generic Host")
 Rel(app, fullscreen_state, "Reads IsFullscreenActive for PAUSED badge", "DI")
 
 Rel(timer_svc, schedule_guard, "ShouldFire() before each dispatch")
-Rel(timer_svc, snooze_sm, "IsSnoozed gate before each dispatch; subscribes OnExpired to restart interval")
+Rel(timer_svc, snooze_sm, "Polls IsSnoozed gate before each dispatch; waits SnoozedUntil when active")
 Rel(timer_svc, fullscreen_state, "IsFullscreenActive gate before each dispatch")
 Rel(timer_svc, toast_dispatcher, "ShowAsync() when all gates pass")
-
-Rel(snooze_sm, timer_svc, "OnExpired event → ResetTimer()", "event")
 
 Rel(fullscreen_poller, native_methods, "Calls P/Invoke chain every 5 s")
 Rel(fullscreen_poller, fullscreen_state, "Updates IsFullscreenActive on transition")
 
 Rel(toast_dispatcher, wintoast, "Creates and shows ToastNotification", "ToastNotificationManagerCompat")
 Rel_Back(toast_handler, wintoast, "Receives Snooze/Dismiss activation args", "COM OnActivated")
-Rel(toast_handler, snooze_sm, "Snooze(duration) on snooze action")
-Rel(toast_handler, timer_svc, "ResetTimer() on dismiss action")
+Rel(toast_handler, snooze_sm, "Snooze(duration) or Clear() on respective action")
+Rel(toast_handler, timer_svc, "ResetTimer() on snooze and dismiss")
 
 Rel(timer_svc, settings_lib, "Reads ReminderIntervalMinutes", "IOptions<BlinkSettings>")
 Rel(schedule_guard, settings_lib, "Reads schedule fields", "BlinkSettings parameter")
