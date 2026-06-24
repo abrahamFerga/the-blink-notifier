@@ -8,7 +8,7 @@ Blink Notifier is a local desktop wellness-reminder app. It makes no network cal
 
 | Threat | Vector | Mitigation |
 |---|---|---|
-| Malicious settings file | Attacker writes crafted `settings.json` | Settings deserialized to a POCO with strict type annotations; `BlinkSettingsValidator` rejects out-of-range values at load time. No `eval`, no code execution from settings. |
+| Malicious settings file | Attacker writes crafted `settings.json` | Settings deserialized to a POCO (`BlinkSettings`) via `System.Text.Json` with no code execution; corrupt or unparseable JSON falls back to safe defaults. Out-of-range field values (e.g. interval < 1 or > 60) are not re-rejected at load time but have no dangerous effect — the timer behaviour is bounded by the OS and the app's own logic. `BlinkSettingsValidator` enforces the same rules in tests. |
 | Privilege escalation via `runFullTrust` (MSIX) | App runs as a full-trust process | The capability is required for EventLog access and registry startup registration. The app does not expose any network ports or named pipes. It reads only its own data directories. |
 | DLL hijacking (portable EXE) | Attacker plants a DLL next to the EXE | The self-contained single-file publish bundles all managed DLLs inside the host EXE. Native dependency extraction uses a per-user temp directory unique to the app, not the working directory. |
 | Toast action spoofing | Attacker crafts a toast activation URI | Toast activation is handled via `ToastNotificationManagerCompat.OnActivated`; only `action=snooze;duration=N` and `action=dismiss` are processed; unrecognised actions are logged and ignored; `N` is parsed as an integer with no shell execution. |
