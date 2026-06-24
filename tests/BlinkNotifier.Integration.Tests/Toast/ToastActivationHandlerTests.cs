@@ -70,4 +70,14 @@ public sealed class ToastActivationHandlerTests
         ToastActivationHandler.Dispatch("action=snooze&duration=5", snooze, null, NullLogger.Instance);
         Assert.False(snooze.IsSnoozed);
     }
+
+    [Fact]
+    public void Dispatch_SnoozeWithMissingDuration_DoesNotSnooze()
+    {
+        // The 'when' clause on the snooze case requires a parseable duration key.
+        // If the key is absent the case falls through to 'default' and is a no-op.
+        var snooze = new SnoozeStateMachine();
+        ToastActivationHandler.Dispatch("action=snooze", snooze, null, NullLogger.Instance);
+        Assert.False(snooze.IsSnoozed);
+    }
 }
