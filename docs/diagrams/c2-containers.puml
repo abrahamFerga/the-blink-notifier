@@ -1,0 +1,34 @@
+@startuml c2-containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 L2 — Containers: The Blink Notifier (single process)
+
+Person(user, "Windows User", "Configures settings, snoozes/dismisses reminders")
+
+System_Boundary(blink, "The Blink Notifier (.exe process)") {
+
+    Container(app, "BlinkNotifier.App", "WPF .NET 9\nGeneric Host", "Entry point; single-instance Mutex; system tray icon (Hardcodet.NotifyIcon.Wpf); settings window and first-run wizard (WPF MVVM); startup registration")
+
+    Container(core, "BlinkNotifier.Core", ".NET 9 class library\nWindows P/Invoke", "Reminder timer (IHostedService); snooze state machine; schedule guard; fullscreen poller (IHostedService, 5 s); toast dispatcher; COM activation callback handler")
+
+    Container(settings_lib, "BlinkNotifier.Settings", ".NET 9 class library\nSystem.Text.Json", "BlinkSettings POCO; IOptions<T> validation at startup; JSON persistence (atomic write via temp-rename); schema migration guard")
+
+}
+
+ContainerDb(settings_file, "BlinkSettings.json", "JSON file\n%LOCALAPPDATA%\\BlinkNotifier\\", "Persisted app state: interval, schedule, snooze options, auto-launch flag, schema version")
+
+System_Ext(wintoast, "Windows Notification System", "WinRT ToastNotificationManager")
+System_Ext(winreg, "Windows Registry (HKCU)", "Startup + AUMID registration")
+
+Rel(user, app, "Interacts via tray icon and settings window")
+Rel(app, core, "Registers IHostedService; dispatches Start/Stop commands; observes FullscreenState for tray badge", "DI / in-process")
+Rel(app, settings_lib, "Reads and writes settings via ISettingsStore; binds IOptions<BlinkSettings> to settings window ViewModel", "DI / in-process")
+Rel(core, settings_lib, "Reads BlinkSettings via IOptions<T> for interval, schedule, and snooze config", "DI / in-process")
+Rel(settings_lib, settings_file, "Loads on startup; saves on user change (atomic temp-rename)", "System.IO")
+Rel(core, wintoast, "Fires toast notifications with action buttons", "CommunityToolkit.WinUI.Notifications / ToastNotificationManagerCompat")
+Rel_Back(core, wintoast, "Receives Snooze/Dismiss callbacks", "COM activation / OnActivated delegate")
+Rel(app, winreg, "Registers startup entry and AUMID (portable EXE path) on first launch", "Registry API (HKCU)")
+
+@enduml

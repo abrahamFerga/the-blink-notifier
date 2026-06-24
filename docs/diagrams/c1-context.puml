@@ -1,0 +1,24 @@
+@startuml c1-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 L1 — System Context: The Blink Notifier
+
+Person(user, "Windows User", "Desk Developer, Office Professional, or Chronic Dry Eye Sufferer running the app on a Windows 10/11 machine")
+
+System(blink, "The Blink Notifier", "Single-process WPF desktop app that fires 20-20-20 eye-health toast notifications at a configurable interval; lives in the system tray; runs entirely offline")
+
+System_Ext(wintoast, "Windows Notification System", "WinRT ToastNotificationManager; renders toast notifications and routes Snooze/Dismiss action-button callbacks back to the app via COM activation")
+
+System_Ext(winreg, "Windows Registry (HKCU)", "Stores the startup task registration (Run key for portable EXE) and the AUMID COM server entry for unpackaged toast activation")
+
+System_Ext(store, "Microsoft Store / GitHub Releases", "Distribution channels for the MSIX package and portable EXE .zip; not contacted at runtime")
+
+Rel(user, blink, "Configures interval and schedule; snoozes or dismisses reminders via tray icon and toast action buttons")
+Rel(blink, wintoast, "Fires toast notifications with Snooze/Dismiss action buttons", "WinRT ToastNotificationManagerCompat")
+Rel_Back(blink, wintoast, "Receives Snooze/Dismiss callbacks", "COM activation (INotificationActivationCallback)")
+Rel(blink, winreg, "Reads/writes startup registration and AUMID entry on first launch", "Registry API (HKCU)")
+Rel_Back(user, store, "Downloads and installs the app", "MSIX or portable EXE .zip")
+
+@enduml
