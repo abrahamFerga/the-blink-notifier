@@ -131,6 +131,69 @@ public sealed class ReminderTimerServiceTests
         await h.Sut.StopAsync(CancellationToken.None);
     }
 
+    [Fact]
+    public async Task StoppedTimer_DoesNotFire()
+    {
+        var h = Build(intervalMinutes: 1);
+        using var cts = new CancellationTokenSource();
+        await h.Sut.StartAsync(cts.Token);
+        await Task.Delay(50);
+
+        h.Sut.Stop();
+        await Task.Delay(50);
+
+        await AdvanceAndYield(h.Clock, TimeSpan.FromMinutes(2));
+        Assert.Equal(0, h.Dispatcher.Count);
+
+        await cts.CancelAsync();
+        await h.Sut.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Restart_AfterStop_FiresAgain()
+    {
+        var h = Build(intervalMinutes: 1);
+        using var cts = new CancellationTokenSource();
+        await h.Sut.StartAsync(cts.Token);
+        await Task.Delay(50);
+
+        h.Sut.Stop();
+        await Task.Delay(50);
+
+        h.Sut.Start();
+        await Task.Delay(50); // let loop re-register timer after Start resets it
+
+        await AdvanceAndYield(h.Clock, TimeSpan.FromMinutes(1));
+        Assert.Equal(1, h.Dispatcher.Count);
+
+        await cts.CancelAsync();
+        await h.Sut.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task FullscreenActive_SuppressesFiring()
+    {
+        var clock = new FakeTimeProvider();
+        var dispatcher = new CountingDispatcher();
+        var snooze = new SnoozeStateMachine(clock);
+        var fullscreen = new FullscreenState();
+        fullscreen.SetActive(true);
+        var store = new StubSettingsStore(new BlinkSettings { ReminderIntervalMinutes = 1, ScheduleEnabled = false });
+        var sut = new ReminderTimerService(snooze, fullscreen, store, dispatcher,
+            NullLogger<ReminderTimerService>.Instance, clock);
+
+        using var cts = new CancellationTokenSource();
+        await sut.StartAsync(cts.Token);
+        await Task.Delay(50);
+
+        await AdvanceAndYield(clock, TimeSpan.FromMinutes(1));
+
+        Assert.Equal(0, dispatcher.Count);
+
+        await cts.CancelAsync();
+        await sut.StopAsync(CancellationToken.None);
+    }
+
     // ── test doubles ─────────────────────────────────────────────────────────
 
     private sealed class CountingDispatcher : IToastDispatcher
