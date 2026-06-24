@@ -119,5 +119,5 @@ jobs:
           "publish/BlinkNotifier-${{ steps.version.outputs.semver }}-win-x64.zip#Portable EXE (no install required)"
           "publish/BlinkNotifier-${{ steps.version.outputs.semver }}.msix#MSIX installer"
           --title "Blink Notifier ${{ steps.version.outputs.semver }}"
-          --notes "See CHANGELOG for details. Download the portable ZIP for no-install use, or the MSIX for managed installation."
+          --notes-file CHANGELOG.md
           --draft
