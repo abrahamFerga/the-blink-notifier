@@ -19,10 +19,10 @@ public sealed class ScheduleGuardTests
     {
         var settings = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(9),
-            ScheduleEndTime   = TimeSpan.FromHours(18),
-            ActiveDays        = [DayOfWeek.Wednesday], // 2026-06-24 is a Wednesday
+            ScheduleEndTime = TimeSpan.FromHours(18),
+            ActiveDays = [DayOfWeek.Wednesday], // 2026-06-24 is a Wednesday
         };
         var now = new DateTimeOffset(2026, 6, 24, 10, 0, 0, TimeSpan.Zero);
         Assert.True(ScheduleGuard.ShouldFire(now, settings));
@@ -33,10 +33,10 @@ public sealed class ScheduleGuardTests
     {
         var settings = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(9),
-            ScheduleEndTime   = TimeSpan.FromHours(18),
-            ActiveDays        = [DayOfWeek.Tuesday],
+            ScheduleEndTime = TimeSpan.FromHours(18),
+            ActiveDays = [DayOfWeek.Tuesday],
         };
         var now = new DateTimeOffset(2026, 6, 24, 20, 0, 0, TimeSpan.Zero); // 20:00 — after window
         Assert.False(ScheduleGuard.ShouldFire(now, settings));
@@ -47,10 +47,10 @@ public sealed class ScheduleGuardTests
     {
         var settings = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(9),
-            ScheduleEndTime   = TimeSpan.FromHours(18),
-            ActiveDays        = [DayOfWeek.Monday], // only Monday
+            ScheduleEndTime = TimeSpan.FromHours(18),
+            ActiveDays = [DayOfWeek.Monday], // only Monday
         };
         // 2026-06-24 is a Wednesday
         var now = new DateTimeOffset(2026, 6, 24, 10, 0, 0, TimeSpan.Zero);
@@ -62,10 +62,10 @@ public sealed class ScheduleGuardTests
     {
         var settings = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(9),
-            ScheduleEndTime   = TimeSpan.FromHours(18),
-            ActiveDays        = [DayOfWeek.Wednesday],
+            ScheduleEndTime = TimeSpan.FromHours(18),
+            ActiveDays = [DayOfWeek.Wednesday],
         };
         // Exactly 09:00 — boundary is inclusive (>=)
         var now = new DateTimeOffset(2026, 6, 24, 9, 0, 0, TimeSpan.Zero);
@@ -77,10 +77,10 @@ public sealed class ScheduleGuardTests
     {
         var settings = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(9),
-            ScheduleEndTime   = TimeSpan.FromHours(18),
-            ActiveDays        = [DayOfWeek.Wednesday],
+            ScheduleEndTime = TimeSpan.FromHours(18),
+            ActiveDays = [DayOfWeek.Wednesday],
         };
         // Exactly 18:00 — end boundary is exclusive (<)
         var now = new DateTimeOffset(2026, 6, 24, 18, 0, 0, TimeSpan.Zero);
@@ -92,10 +92,10 @@ public sealed class ScheduleGuardTests
     {
         var settings = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(9),
-            ScheduleEndTime   = TimeSpan.FromHours(18),
-            ActiveDays        = [],
+            ScheduleEndTime = TimeSpan.FromHours(18),
+            ActiveDays = [],
         };
         var now = new DateTimeOffset(2026, 6, 24, 10, 0, 0, TimeSpan.Zero);
         Assert.False(ScheduleGuard.ShouldFire(now, settings));

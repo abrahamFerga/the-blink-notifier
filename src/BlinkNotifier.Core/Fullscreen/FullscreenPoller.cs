@@ -38,8 +38,8 @@ public sealed class FullscreenPoller(FullscreenState state, ILogger<FullscreenPo
         if (!NativeMethods.GetMonitorInfo(hMonitor, ref mi)) return false;
 
         var mon = mi.rcMonitor;
-        return winRect.Left  <= mon.Left
-            && winRect.Top   <= mon.Top
+        return winRect.Left <= mon.Left
+            && winRect.Top <= mon.Top
             && winRect.Right >= mon.Right
             && winRect.Bottom >= mon.Bottom;
     }

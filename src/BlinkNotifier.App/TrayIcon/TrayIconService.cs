@@ -22,10 +22,10 @@ public sealed class TrayIconService : IDisposable
     public TrayIconService(TrayIconViewModel viewModel, ILogger<TrayIconService> logger)
     {
         _viewModel = viewModel;
-        _logger    = logger;
+        _logger = logger;
 
-        _iconActive  = CreateCircleIcon(Color.FromArgb(0x26, 0x8B, 0xD2)); // blue
-        _iconPaused  = CreateCircleIcon(Color.FromArgb(0xCB, 0x4B, 0x16)); // orange
+        _iconActive = CreateCircleIcon(Color.FromArgb(0x26, 0x8B, 0xD2)); // blue
+        _iconPaused = CreateCircleIcon(Color.FromArgb(0xCB, 0x4B, 0x16)); // orange
         _iconStopped = CreateCircleIcon(Color.FromArgb(0x58, 0x58, 0x58)); // grey
     }
 
@@ -33,7 +33,7 @@ public sealed class TrayIconService : IDisposable
     {
         _taskbarIcon = new TaskbarIcon
         {
-            Icon        = _iconActive,
+            Icon = _iconActive,
             ToolTipText = _viewModel.ToolTip,
         };
 
@@ -48,8 +48,8 @@ public sealed class TrayIconService : IDisposable
             if (e.PropertyName == nameof(TrayIconViewModel.ToolTip))
                 _taskbarIcon.ToolTipText = _viewModel.ToolTip;
             if (e.PropertyName == nameof(TrayIconViewModel.IsRunning))
-                _taskbarIcon.Icon = _viewModel.IsPaused   ? _iconPaused
-                                  : _viewModel.IsRunning  ? _iconActive
+                _taskbarIcon.Icon = _viewModel.IsPaused ? _iconPaused
+                                  : _viewModel.IsRunning ? _iconActive
                                   : _iconStopped;
         };
 
@@ -67,12 +67,12 @@ public sealed class TrayIconService : IDisposable
     {
         var menu = new ContextMenu();
 
-        menu.Items.Add(new MenuItem { Header = "Start",    Command = _viewModel.StartCommand    });
-        menu.Items.Add(new MenuItem { Header = "Stop",     Command = _viewModel.StopCommand     });
+        menu.Items.Add(new MenuItem { Header = "Start", Command = _viewModel.StartCommand });
+        menu.Items.Add(new MenuItem { Header = "Stop", Command = _viewModel.StopCommand });
         menu.Items.Add(new Separator());
         menu.Items.Add(new MenuItem { Header = "Settings", Command = _viewModel.SettingsCommand });
         menu.Items.Add(new Separator());
-        menu.Items.Add(new MenuItem { Header = "Exit",     Command = _viewModel.ExitCommand     });
+        menu.Items.Add(new MenuItem { Header = "Exit", Command = _viewModel.ExitCommand });
 
         return menu;
     }

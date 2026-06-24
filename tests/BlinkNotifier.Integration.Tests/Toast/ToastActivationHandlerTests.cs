@@ -1,6 +1,6 @@
 // BlinkNotifier.Integration.Tests — toast activation routing (ARCH.md § API surface, ADR-0003)
-using BlinkNotifier.Core.Toast;
 using BlinkNotifier.Core.Timer;
+using BlinkNotifier.Core.Toast;
 
 namespace BlinkNotifier.Integration.Tests.Toast;
 
@@ -15,7 +15,7 @@ public sealed class ToastActivationHandlerTests
     }
 
     [Theory]
-    [InlineData("action=snooze;duration=5",  5)]
+    [InlineData("action=snooze;duration=5", 5)]
     [InlineData("action=snooze;duration=15", 15)]
     [InlineData("action=snooze;duration=60", 60)]
     public void Dispatch_SnoozeAction_SnoozesForCorrectDuration(string rawArgs, int expectedMinutes)

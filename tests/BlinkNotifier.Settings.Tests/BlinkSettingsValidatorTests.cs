@@ -31,9 +31,9 @@ public sealed class BlinkSettingsValidatorTests
     {
         var s = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(18),
-            ScheduleEndTime   = TimeSpan.FromHours(9),
+            ScheduleEndTime = TimeSpan.FromHours(9),
         };
         var result = _sut.Validate(null, s);
         Assert.NotEqual(ValidateOptionsResult.Success, result);

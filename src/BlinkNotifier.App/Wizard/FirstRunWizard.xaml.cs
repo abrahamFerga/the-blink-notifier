@@ -13,7 +13,7 @@ public partial class FirstRunWizard : Window
     public FirstRunWizard(StartupRegistrar startup, ILogger<FirstRunWizard> logger)
     {
         _startup = startup;
-        _logger  = logger;
+        _logger = logger;
         InitializeComponent();
     }
 

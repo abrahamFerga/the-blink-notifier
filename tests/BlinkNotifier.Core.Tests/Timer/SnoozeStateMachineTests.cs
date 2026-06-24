@@ -42,7 +42,7 @@ public sealed class SnoozeStateMachineTests
 
         Assert.InRange(sm.SnoozedUntil,
             before + duration - TimeSpan.FromSeconds(1),
-            after  + duration + TimeSpan.FromSeconds(1));
+            after + duration + TimeSpan.FromSeconds(1));
     }
 
     [Fact]

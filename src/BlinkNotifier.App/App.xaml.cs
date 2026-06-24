@@ -64,7 +64,7 @@ public partial class App : Application
 
         // Wire toast activation before starting background services (ADR-0003, ADR-0005)
         var snooze = _host.Services.GetRequiredService<SnoozeStateMachine>();
-        var timer  = _host.Services.GetRequiredService<ReminderTimerService>();
+        var timer = _host.Services.GetRequiredService<ReminderTimerService>();
         var logger = _host.Services.GetRequiredService<ILogger<App>>();
         ToastActivationHandler.Register(snooze, timer, logger);
 

@@ -17,7 +17,7 @@ public static class ToastActivationHandler
         ILogger logger)
     {
         _snooze = snooze;
-        _timer  = timer;
+        _timer = timer;
         _logger = logger;
 
         // Wire the static OnActivated callback once per process lifetime.
