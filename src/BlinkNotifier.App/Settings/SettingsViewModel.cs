@@ -114,29 +114,37 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     private async Task SaveAsync()
     {
-        var current = await _store.LoadAsync();
-        var updated = new BlinkSettings
+        try
         {
-            SchemaVersion           = current.SchemaVersion,
-            ReminderIntervalMinutes = IntervalMinutes,
-            AutoLaunchEnabled       = AutoLaunchEnabled,
-            ScheduleEnabled         = ScheduleEnabled,
-            ScheduleStartTime       = ParseTime(ScheduleStart),
-            ScheduleEndTime         = ParseTime(ScheduleEnd),
-            ActiveDays              = BuildActiveDays(),
-            SnoozeOptionsMinutes    = current.SnoozeOptionsMinutes,
-        };
+            var current = await _store.LoadAsync();
+            var updated = new BlinkSettings
+            {
+                SchemaVersion           = current.SchemaVersion,
+                ReminderIntervalMinutes = IntervalMinutes,
+                AutoLaunchEnabled       = AutoLaunchEnabled,
+                ScheduleEnabled         = ScheduleEnabled,
+                ScheduleStartTime       = ParseTime(ScheduleStart),
+                ScheduleEndTime         = ParseTime(ScheduleEnd),
+                ActiveDays              = BuildActiveDays(),
+                SnoozeOptionsMinutes    = current.SnoozeOptionsMinutes,
+            };
 
-        await _store.SaveAsync(updated);
+            await _store.SaveAsync(updated);
 
-        if (AutoLaunchEnabled)
-            await _startup.EnableAsync();
-        else
-            await _startup.DisableAsync();
+            if (AutoLaunchEnabled)
+                await _startup.EnableAsync();
+            else
+                await _startup.DisableAsync();
 
-        _logger.LogInformation(
-            "Settings saved — interval={Interval}m, schedule={Schedule}, autoLaunch={AutoLaunch}.",
-            IntervalMinutes, ScheduleEnabled, AutoLaunchEnabled);
+            _logger.LogInformation(
+                "Settings saved — interval={Interval}m, schedule={Schedule}, autoLaunch={AutoLaunch}.",
+                IntervalMinutes, ScheduleEnabled, AutoLaunchEnabled);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save settings.");
+            ValidationError = "Failed to save settings. Please try again.";
+        }
     }
 
     private void Validate()

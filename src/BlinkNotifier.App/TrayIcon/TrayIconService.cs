@@ -1,5 +1,6 @@
 // BlinkNotifier.App — Hardcodet NotifyIcon wrapper (ARCH.md § Solution layout, ADR-0002, #6)
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -79,9 +80,15 @@ public sealed class TrayIconService : IDisposable
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
         g.FillEllipse(new SolidBrush(color), 1, 1, 13, 13);
 
+        // GetHicon returns a Win32 HICON we must destroy; Clone copies it into managed memory.
         var hIcon = bmp.GetHicon();
-        return Icon.FromHandle(hIcon);
+        var icon = (Icon)Icon.FromHandle(hIcon).Clone();
+        DestroyIcon(hIcon);
+        return icon;
     }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool DestroyIcon(nint hIcon);
 
     public void Dispose()
     {
