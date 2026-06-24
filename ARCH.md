@@ -99,14 +99,13 @@ src/
 
   BlinkNotifier.Packaging/            ← Windows Application Packaging Project (.wapproj)
     Package.appxmanifest              ← MSIX identity, windows.startupTask extension, capabilities
-    Properties/PublishProfiles/
-      msix.pubxml                     ← MSIX publish profile (signed, packaged)
-      portable.pubxml                 ← self-contained single-file EXE, win-x64
+    Images/                           ← Store icon PNGs (placeholder; replace with real artwork before Store submission)
+      generate-icons.ps1              ← regenerates icon PNGs; run after updating source SVG
 
 tests/
-  BlinkNotifier.Core.Tests/           ← xUnit; ReminderTimerService, ScheduleGuard, SnoozeStateMachine
-  BlinkNotifier.Settings.Tests/       ← xUnit; JSON round-trip, validator, schema migration guard
-  BlinkNotifier.Integration.Tests/    ← xUnit; toast fire and COM activation on Windows runner
+  BlinkNotifier.Core.Tests/           ← xUnit; ReminderTimerService, ScheduleGuard, SnoozeStateMachine, FullscreenState
+  BlinkNotifier.Settings.Tests/       ← xUnit; JSON round-trip, validator, defaults
+  BlinkNotifier.Integration.Tests/    ← xUnit; toast activation routing on Windows runner
 
 docs/
   diagrams/
@@ -117,7 +116,9 @@ docs/
 
 .github/
   workflows/
-    ci.yml                            ← build → test → package (MSIX + portable EXE) → gh release on tag push
+    ci.yml                            ← build + test + dotnet format check on every push/PR to main or feat/**
+    release.yml                       ← publish portable EXE (.zip) + MSIX; gh release draft on v* tag push
+    pages.yml                         ← deploy docs/ to GitHub Pages on push to main
 ```
 
 **Dependency direction:** `BlinkNotifier.App` → `BlinkNotifier.Core` → `BlinkNotifier.Settings`.
@@ -141,7 +142,7 @@ No circular dependencies. `BlinkNotifier.Packaging` references `BlinkNotifier.Ap
 |---|---|---|
 | **AuthN / AuthZ** | None — single Windows OS user; all policies from PLAN granted unconditionally at runtime; no authorization checks in v1 | ADR-0009 |
 | **Multi-tenancy** | None — single user, single device; no shared data model | ADR-0009 |
-| **Observability** | `Serilog` → rolling JSON file sink (`%LOCALAPPDATA%\BlinkNotifier\logs\blink-.json`); Windows Event Log sink for unhandled exceptions; host-level `ILogger<T>` throughout | ADR-0010 |
+| **Observability** | `Serilog` → rolling JSON file sink (`%LOCALAPPDATA%\BlinkNotifier\logs\blink-.json`, 7-day retention); Windows Event Log sink for Error/Fatal entries (source: `Blink Notifier`); host-level `ILogger<T>` throughout | ADR-0010 |
 | **Health checks** | In-process: `ReminderTimerService` logs a heartbeat at `Debug` level each tick; no HTTP health endpoint | ADR-0011 |
 | **Resilience** | `PeriodicTimer` is intrinsically resilient to single-tick latency; toast dispatch wrapped in `try/catch` with error log; no Polly (no outbound network calls) | ADR-0011 |
 | **Configuration** | `IOptions<BlinkSettings>` bound from `JsonSettingsStore`; validated at startup by `BlinkSettingsValidator` (`IValidateOptions<T>`); defaults written on first run if file absent | ADR-0013 |
