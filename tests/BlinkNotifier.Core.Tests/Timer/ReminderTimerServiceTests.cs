@@ -194,6 +194,41 @@ public sealed class ReminderTimerServiceTests
         await sut.StopAsync(CancellationToken.None);
     }
 
+    [Fact]
+    public async Task ScheduleWindow_InactiveDay_SuppressesFiring()
+    {
+        // ActiveDays = [] means ScheduleGuard.ShouldFire always returns false,
+        // regardless of timezone — so this test is portable across CI regions.
+        var clock = new FakeTimeProvider();
+        var dispatcher = new CountingDispatcher();
+        var store = new StubSettingsStore(new BlinkSettings
+        {
+            ReminderIntervalMinutes = 1,
+            ScheduleEnabled = true,
+            ScheduleStartTime = TimeSpan.FromHours(9),
+            ScheduleEndTime = TimeSpan.FromHours(18),
+            ActiveDays = [],
+        });
+        var sut = new ReminderTimerService(
+            new SnoozeStateMachine(clock),
+            new FullscreenState(),
+            store,
+            dispatcher,
+            NullLogger<ReminderTimerService>.Instance,
+            clock);
+
+        using var cts = new CancellationTokenSource();
+        await sut.StartAsync(cts.Token);
+        await Task.Delay(50);
+
+        await AdvanceAndYield(clock, TimeSpan.FromMinutes(1));
+
+        Assert.Equal(0, dispatcher.Count);
+
+        await cts.CancelAsync();
+        await sut.StopAsync(CancellationToken.None);
+    }
+
     // ── test doubles ─────────────────────────────────────────────────────────
 
     private sealed class CountingDispatcher : IToastDispatcher
