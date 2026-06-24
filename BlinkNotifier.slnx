@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BlinkNotifier.App/BlinkNotifier.App.csproj" />
+    <Project Path="src/BlinkNotifier.Core/BlinkNotifier.Core.csproj" />
+    <Project Path="src/BlinkNotifier.Settings/BlinkNotifier.Settings.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BlinkNotifier.Core.Tests/BlinkNotifier.Core.Tests.csproj" />
+    <Project Path="tests/BlinkNotifier.Settings.Tests/BlinkNotifier.Settings.Tests.csproj" />
+  </Folder>
+</Solution>
