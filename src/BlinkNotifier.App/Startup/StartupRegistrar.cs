@@ -53,13 +53,6 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> logger)
         }
     }
 
-    public bool IsEnabled()
-    {
-        if (IsPackaged) return false; // async-only check for MSIX; caller uses EnabledAsync instead
-        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
-        return key?.GetValue(RunKeyName) is not null;
-    }
-
     private static async Task EnableMsixStartupTaskAsync()
     {
         var task = await Windows.ApplicationModel.StartupTask.GetAsync("BlinkNotifierStartup");
@@ -78,7 +71,6 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> logger)
         {
             task.Disable();
         }
-        await Task.CompletedTask;
     }
 
     private void EnableRegistryRunKey()
