@@ -4,7 +4,7 @@ using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace BlinkNotifier.Core.Toast;
 
-public sealed class ToastDispatcher(ILogger<ToastDispatcher> logger)
+public sealed class ToastDispatcher(ILogger<ToastDispatcher> logger) : IToastDispatcher
 {
     public Task ShowAsync(CancellationToken ct = default)
     {
