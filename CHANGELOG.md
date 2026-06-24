@@ -11,6 +11,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Schedule settings could be saved with no active days selected when checkboxes were changed
   while the schedule was already enabled (day-setter validation was not re-triggered).
+- GDI+ `SolidBrush` resource leak in `TrayIconService` — brush is now disposed after
+  each tray icon is rendered at startup.
 
 ## [1.0.0] — planned
 

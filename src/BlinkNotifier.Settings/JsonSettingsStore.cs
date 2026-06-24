@@ -52,11 +52,20 @@ public sealed class JsonSettingsStore : ISettingsStore
         Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
         var tmp = _settingsPath + ".tmp";
 
-        await using (var stream = File.Create(tmp))
-            await JsonSerializer.SerializeAsync(stream, settings, JsonOptions, ct);
+        try
+        {
+            await using (var stream = File.Create(tmp))
+                await JsonSerializer.SerializeAsync(stream, settings, JsonOptions, ct);
 
-        // Atomic replace: rename temp file over destination (handles first-save and overwrite).
-        File.Move(tmp, _settingsPath, overwrite: true);
+            // Atomic replace: rename temp file over destination (handles first-save and overwrite).
+            File.Move(tmp, _settingsPath, overwrite: true);
+        }
+        catch
+        {
+            File.Delete(tmp); // remove partial write so stale .tmp files don't accumulate
+            throw;
+        }
+
         _logger.LogDebug("Settings saved to {Path}.", _settingsPath);
     }
 

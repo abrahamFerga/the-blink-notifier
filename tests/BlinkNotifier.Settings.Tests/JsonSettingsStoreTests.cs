@@ -72,6 +72,20 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveAsync_WhenCancelled_CleansUpTempFile()
+    {
+        // A pre-cancelled token causes SerializeAsync to throw after File.Create(tmp)
+        // already ran; the catch block must delete the partial .tmp before rethrowing.
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _sut.SaveAsync(new BlinkSettings(), cts.Token));
+
+        Assert.False(File.Exists(_settingsPath + ".tmp"));
+    }
+
+    [Fact]
     public async Task LoadAsync_WithUnknownSchemaVersion_ReturnsDefaults()
     {
         // SchemaVersion 0 is a hypothetical pre-v1 format; the Migrate() switch
