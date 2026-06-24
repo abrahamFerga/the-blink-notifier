@@ -103,8 +103,12 @@ public sealed class TrayIconService : IDisposable
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool DestroyIcon(nint hIcon);
 
+    private bool _disposed;
+
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
         _taskbarIcon?.Dispose();
         _iconActive.Dispose();
         _iconPaused.Dispose();
