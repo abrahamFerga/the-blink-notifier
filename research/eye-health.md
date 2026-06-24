@@ -108,11 +108,16 @@ Naming what's out is as load-bearing as naming what's in.
 ## Open questions for the user
 
 1. **Blink detection approach**: Should v1 use camera-based real-time blink detection (like BlinkEasy/ScreenBlink) or timer-based 20-20-20 reminders (like Workrave/Eye Care)? Camera-based is more accurate but requires webcam permission and more development effort. Timer-based ships faster. Or both, selectable?
+   > **Answer:** Timer-based 20-20-20 reminders only. No webcam required for v1.
 
 2. **Target platforms at v1**: The current machine is Windows 11. Should v1 be Windows-only, or also macOS? (Linux can wait per skip list.)
+   > **Answer:** Windows only (Windows 10/11).
 
 3. **Notification style**: Should breaks use a subtle popup the user can dismiss (like ScreenBlink), or a full-screen overlay that demands attention (like Workrave/LookAway)? This is a core UX decision that shapes the whole notification system.
+   > **Answer:** Subtle popup / toast (dismissible). Snooze and dismiss supported.
 
 4. **Analytics / reporting**: Should the app track and display blink-rate history or break adherence stats, or is a simple "notify and forget" sufficient for v1?
+   > **Answer:** Notify and forget — no stats UI for v1.
 
 5. **Distribution model**: Personal/local tool (no installer, just a binary) or a distributable app (Microsoft Store / GitHub releases)? This affects packaging, signing, and update story.
+   > **Answer:** Both GitHub Releases and Microsoft Store.
