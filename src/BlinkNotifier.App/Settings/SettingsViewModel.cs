@@ -75,13 +75,13 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     }
 
     // --- Active days ---
-    public bool Monday { get => _monday; set { _monday = value; OnPropertyChanged(); } }
-    public bool Tuesday { get => _tuesday; set { _tuesday = value; OnPropertyChanged(); } }
-    public bool Wednesday { get => _wednesday; set { _wednesday = value; OnPropertyChanged(); } }
-    public bool Thursday { get => _thursday; set { _thursday = value; OnPropertyChanged(); } }
-    public bool Friday { get => _friday; set { _friday = value; OnPropertyChanged(); } }
-    public bool Saturday { get => _saturday; set { _saturday = value; OnPropertyChanged(); } }
-    public bool Sunday { get => _sunday; set { _sunday = value; OnPropertyChanged(); } }
+    public bool Monday { get => _monday; set { _monday = value; OnPropertyChanged(); Validate(); } }
+    public bool Tuesday { get => _tuesday; set { _tuesday = value; OnPropertyChanged(); Validate(); } }
+    public bool Wednesday { get => _wednesday; set { _wednesday = value; OnPropertyChanged(); Validate(); } }
+    public bool Thursday { get => _thursday; set { _thursday = value; OnPropertyChanged(); Validate(); } }
+    public bool Friday { get => _friday; set { _friday = value; OnPropertyChanged(); Validate(); } }
+    public bool Saturday { get => _saturday; set { _saturday = value; OnPropertyChanged(); Validate(); } }
+    public bool Sunday { get => _sunday; set { _sunday = value; OnPropertyChanged(); Validate(); } }
 
     // --- Validation ---
     public string? ValidationError
