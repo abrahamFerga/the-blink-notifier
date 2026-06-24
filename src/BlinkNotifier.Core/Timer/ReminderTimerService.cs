@@ -8,74 +8,119 @@ using Microsoft.Extensions.Logging;
 
 namespace BlinkNotifier.Core.Timer;
 
-public sealed class ReminderTimerService(
-    SnoozeStateMachine snooze,
-    FullscreenState fullscreen,
-    ISettingsStore settingsStore,
-    ToastDispatcher toastDispatcher,
-    ILogger<ReminderTimerService> logger)
-    : BackgroundService
+public sealed class ReminderTimerService : BackgroundService
 {
+    private readonly SnoozeStateMachine _snooze;
+    private readonly FullscreenState _fullscreen;
+    private readonly ISettingsStore _settingsStore;
+    private readonly ToastDispatcher _toastDispatcher;
+    private readonly ILogger<ReminderTimerService> _logger;
+
+    // Replacing this CTS cancels the current Task.Delay, causing the loop to restart from now.
+    private CancellationTokenSource _timerReset = new();
     private volatile bool _running = true;
 
-    public void Stop() => _running = false;
-    public void Start() => _running = true;
+    public ReminderTimerService(
+        SnoozeStateMachine snooze,
+        FullscreenState fullscreen,
+        ISettingsStore settingsStore,
+        ToastDispatcher toastDispatcher,
+        ILogger<ReminderTimerService> logger)
+    {
+        _snooze = snooze;
+        _fullscreen = fullscreen;
+        _settingsStore = settingsStore;
+        _toastDispatcher = toastDispatcher;
+        _logger = logger;
+    }
 
+    public void Stop() => _running = false;
+
+    public void Start()
+    {
+        _running = true;
+        ResetTimer(); // restart countdown from now
+    }
+
+    // Cancel the current wait so the outer loop re-evaluates from the top immediately.
     public void ResetTimer()
     {
-        // Cancelling the current iteration is handled by re-entering the loop;
-        // the PeriodicTimer delay is re-applied after each WaitForNextTickAsync.
-        // No explicit reset needed — the next tick will fire at interval from last fire.
+        var old = Interlocked.Exchange(ref _timerReset, new CancellationTokenSource());
+        old.Cancel();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("ReminderTimerService started.");
+        _logger.LogInformation("ReminderTimerService started.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var settings = await settingsStore.LoadAsync(stoppingToken);
-            var interval = TimeSpan.FromMinutes(settings.ReminderIntervalMinutes);
-
-            using var timer = new PeriodicTimer(interval);
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            if (!_running)
             {
-                logger.LogDebug("Timer tick — checking gates.");
-
-                if (!_running)
-                {
-                    logger.LogDebug("Timer stopped by user.");
-                    continue;
-                }
-
-                if (snooze.IsSnoozed)
-                {
-                    logger.LogDebug("Snoozed until {Until}.", snooze.SnoozedUntil);
-                    continue;
-                }
-
-                if (fullscreen.IsFullscreenActive)
-                {
-                    logger.LogDebug("Fullscreen active — suppressing notification.");
-                    continue;
-                }
-
-                var now = DateTimeOffset.Now;
-                if (!ScheduleGuard.ShouldFire(now, settings))
-                {
-                    logger.LogDebug("Outside schedule window — suppressing notification.");
-                    continue;
-                }
-
-                await toastDispatcher.ShowAsync(stoppingToken);
-
-                // Reload settings: interval may have changed since the timer was created.
-                var updated = await settingsStore.LoadAsync(stoppingToken);
-                if (updated.ReminderIntervalMinutes != settings.ReminderIntervalMinutes)
-                    break; // restart outer loop to pick up the new interval
+                // Stopped by user — poll until started again.
+                try { await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken); } catch { }
+                continue;
             }
+
+            var settings = await _settingsStore.LoadAsync(stoppingToken);
+
+            // If snoozed, wait for the snooze to expire, then fire.
+            // If not snoozed, wait the full configured interval.
+            TimeSpan waitFor;
+            if (_snooze.IsSnoozed)
+            {
+                waitFor = _snooze.SnoozedUntil - DateTimeOffset.UtcNow;
+                if (waitFor <= TimeSpan.Zero)
+                {
+                    _snooze.Clear();
+                    continue;
+                }
+                _logger.LogDebug("Snooze active — firing in {Remaining:mm\\:ss}.", waitFor);
+            }
+            else
+            {
+                waitFor = TimeSpan.FromMinutes(settings.ReminderIntervalMinutes);
+                _logger.LogDebug("Next reminder in {Interval} minutes.", settings.ReminderIntervalMinutes);
+            }
+
+            // Snapshot the current reset token before waiting.
+            // ResetTimer() replaces _timerReset and cancels the old one, which unblocks this delay.
+            var resetToken = _timerReset.Token;
+            using var combined = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, resetToken);
+            try
+            {
+                await Task.Delay(waitFor, combined.Token);
+            }
+            catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogDebug("Timer reset — restarting countdown.");
+                continue;
+            }
+            if (stoppingToken.IsCancellationRequested) break;
+
+            // Recheck gates after the wait completes.
+            if (!_running) continue;
+
+            _snooze.Clear();
+
+            if (_fullscreen.IsFullscreenActive)
+            {
+                _logger.LogDebug("Fullscreen active — suppressing; retrying in 5s.");
+                try { await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken); } catch { }
+                continue;
+            }
+
+            if (!ScheduleGuard.ShouldFire(DateTimeOffset.Now, settings))
+            {
+                _logger.LogDebug("Outside schedule window — retrying in 60s.");
+                try { await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); } catch { }
+                continue;
+            }
+
+            await _toastDispatcher.ShowAsync(stoppingToken);
+            // Loop restarts from top — next interval begins from now.
         }
 
-        logger.LogInformation("ReminderTimerService stopped.");
+        _logger.LogInformation("ReminderTimerService stopped.");
     }
 }

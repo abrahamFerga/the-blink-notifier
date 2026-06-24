@@ -35,12 +35,14 @@ public static class ToastActivationHandler
             case "snooze" when args.TryGetValue("duration", out var durStr)
                             && int.TryParse(durStr, out var minutes):
                 _snooze?.Snooze(TimeSpan.FromMinutes(minutes));
+                _timer?.ResetTimer(); // cancel current wait; loop will see snooze and wait N min
                 _logger?.LogInformation("Snoozed for {Minutes} minutes.", minutes);
                 break;
 
             case "dismiss":
                 _snooze?.Clear();
-                _logger?.LogInformation("Toast dismissed.");
+                _timer?.ResetTimer(); // restart full interval from now (next fire = now + interval)
+                _logger?.LogInformation("Toast dismissed — timer reset.");
                 break;
 
             default:
