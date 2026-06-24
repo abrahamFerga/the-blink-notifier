@@ -226,16 +226,16 @@ named pipe, or the `SingleInstance` pattern from `Microsoft.Shell`.
 ### Decision
 
 We will use a **global named `Mutex`** (`Global\BlinkNotifier-SingleInstance`) created in
-`Program.cs` before the Generic Host is built. A second launch detects the mutex is owned,
-sends a `WM_USER` window message to bring the first instance's settings window to the foreground,
-and exits with code 0.
+`App.xaml.cs` in `OnStartup`, before the Generic Host is built. A second launch detects the
+mutex is owned and calls `Application.Shutdown(0)`. For a tray-only app with no main window,
+silently exiting is sufficient — the tray icon of the first instance remains accessible.
 
 ### Consequences
 
 - **Positive**: Zero extra dependencies; robust across session boundaries (the `Global\` prefix
   makes the mutex machine-wide); straightforward lifetime tied to the process.
-- **Negative**: `WM_USER` message dispatch requires a hidden message window (`HwndSource`) in the
-  first instance to receive the activation signal; adds a small amount of Win32 wiring.
+- **Negative**: Second launch exits silently with no "bring to foreground" behavior. Acceptable
+  for a tray app; a future version could add a named-pipe signal if needed.
 - **Neutral**: The mutex name is a constant; if the MSIX and portable EXE are both installed, they
   share the mutex name and correctly prevent two coexisting instances.
 
