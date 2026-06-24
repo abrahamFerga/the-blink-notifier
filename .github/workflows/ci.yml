@@ -26,11 +26,17 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=results.trx"
+        run: >
+          dotnet test --configuration Release --no-build
+          --logger "trx;LogFileName=results.trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: "**/*.trx"
+          path: |
+            **/*.trx
+            TestResults/**/coverage.cobertura.xml

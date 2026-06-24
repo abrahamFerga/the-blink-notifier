@@ -46,12 +46,12 @@ shell + DI composition root; Settings = POCO + persistence).
 | Component | Type | Purpose |
 |---|---|---|
 | `ReminderTimerService` | `IHostedService` | Schedules periodic ticks at the user-configured interval; gates on `ScheduleGuard`, `SnoozeStateMachine`, and `FullscreenState` before dispatching; resets timer after each notification event |
-| `SnoozeStateMachine` | Singleton service | Thread-safe in-memory snooze state (`IsSnoozed`, `SnoozedUntil`); exposes `Snooze(duration)` and `Clear()`; fires `OnExpired` event when snooze lapses |
+| `SnoozeStateMachine` | Singleton service | Thread-safe in-memory snooze state (`IsSnoozed`, `SnoozedUntil`); exposes `Snooze(duration)` and `Clear()`; snooze expiry detected by polling `IsSnoozed` in the timer loop |
 | `ScheduleGuard` | Singleton service | Pure `ShouldFire(DateTimeOffset now, BlinkSettings s)` — checks current time against `ScheduleStartTime`/`ScheduleEndTime` and `ActiveDays`; no side effects |
 | `FullscreenPoller` | `IHostedService` | 5-second poll loop; P/Invoke `GetForegroundWindow` → `GetWindowRect` → `MonitorFromWindow` → `GetMonitorInfo`; updates `FullscreenState`; publishes `FullscreenChanged` event on transition |
 | `FullscreenState` | Singleton | In-memory `IsFullscreenActive` + `FullscreenEnteredAt`; written by `FullscreenPoller`, read by `ReminderTimerService` and `TrayIconViewModel` |
 | `ToastDispatcher` | Service | Builds `ToastContent` via `ToastContentBuilder`; calls `ToastNotificationManagerCompat.CreateToastNotifier().Show()`; handles AUMID for both MSIX and portable (unpackaged) paths |
-| `ToastActivationHandler` | Static callback | Registered once via `ToastNotificationManagerCompat.OnActivated`; parses `arguments` (`action=snooze&duration=5`, `action=dismiss`); routes to `SnoozeStateMachine.Snooze()` or `ReminderTimerService.ResetTimer()` |
+| `ToastActivationHandler` | Static callback | Registered once via `ToastNotificationManagerCompat.OnActivated`; parses `arguments` (`action=snooze;duration=5`, `action=dismiss`); routes to `SnoozeStateMachine.Snooze()` + `ResetTimer()` or `SnoozeStateMachine.Clear()` + `ResetTimer()` |
 | `NativeMethods` | Static P/Invoke class | `GetForegroundWindow`, `GetWindowRect`, `MonitorFromWindow`, `GetMonitorInfo` from `user32.dll` |
 
 Diagram: `docs/diagrams/c3-components-core.puml`
