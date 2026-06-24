@@ -106,6 +106,7 @@ public partial class App : Application
     {
         _host?.Services.GetRequiredService<TrayIconService>().Dispose();
         _host?.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+        _host?.Dispose(); // disposes IServiceProvider → calls Dispose() on IDisposable singletons
         Log.CloseAndFlush();
         _singleInstanceMutex?.Dispose();
         base.OnExit(e);
