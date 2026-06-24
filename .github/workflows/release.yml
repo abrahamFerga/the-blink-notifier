@@ -31,7 +31,7 @@ jobs:
 
       - name: Build & test
         run: |
-          dotnet restore
+          dotnet restore --locked-mode
           dotnet build --configuration Release --no-restore
           dotnet test  --configuration Release --no-build
 
