@@ -1,4 +1,4 @@
-// BlinkNotifier.Settings — startup validation (ARCH.md § Cross-cutting wiring, ADR-0007)
+// BlinkNotifier.Settings — formal test target for settings validation rules (ARCH.md § Cross-cutting wiring)
 using Microsoft.Extensions.Options;
 
 namespace BlinkNotifier.Settings;
