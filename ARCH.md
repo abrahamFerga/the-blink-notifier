@@ -145,7 +145,7 @@ No circular dependencies. `BlinkNotifier.Packaging` references `BlinkNotifier.Ap
 | **Observability** | `Serilog` → rolling JSON file sink (`%LOCALAPPDATA%\BlinkNotifier\logs\blink-.json`, 7-day retention); Windows Event Log sink for Error/Fatal entries (source: `Blink Notifier`); host-level `ILogger<T>` throughout | ADR-0010 |
 | **Health checks** | In-process: `ReminderTimerService` logs a heartbeat at `Debug` level each tick; no HTTP health endpoint | ADR-0011 |
 | **Resilience** | `PeriodicTimer` is intrinsically resilient to single-tick latency; toast dispatch wrapped in `try/catch` with error log; no Polly (no outbound network calls) | ADR-0011 |
-| **Configuration** | `IOptions<BlinkSettings>` bound from `JsonSettingsStore`; validated at startup by `BlinkSettingsValidator` (`IValidateOptions<T>`); defaults written on first run if file absent | ADR-0013 |
+| **Configuration** | Settings loaded at runtime via `ISettingsStore.LoadAsync()` (not `IOptions<T>`); validated before save by `SettingsViewModel.Validate()`; `BlinkSettingsValidator` (`IValidateOptions<BlinkSettings>`) is a formal test target; defaults come from `BlinkSettings` field initialisers and are written on first use | ADR-0013 |
 | **Secrets** | None — the app contains no credentials, tokens, or keys | ADR-0012 |
 | **Background jobs** | Two `IHostedService` registrations: `ReminderTimerService` (user-configured interval) and `FullscreenPoller` (5-second fixed interval); both hosted by .NET Generic Host | ADR-0007 |
 | **Single-instance enforcement** | Global `Mutex` named `Global\\BlinkNotifier-SingleInstance` in `App.xaml.cs`; second instance calls `Application.Shutdown(0)` and exits silently (tray icon remains accessible) | ADR-0006 |
