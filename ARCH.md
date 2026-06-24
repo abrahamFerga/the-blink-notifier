@@ -147,7 +147,7 @@ No circular dependencies. `BlinkNotifier.Packaging` references `BlinkNotifier.Ap
 | **Configuration** | `IOptions<BlinkSettings>` bound from `JsonSettingsStore`; validated at startup by `BlinkSettingsValidator` (`IValidateOptions<T>`); defaults written on first run if file absent | ADR-0013 |
 | **Secrets** | None — the app contains no credentials, tokens, or keys | ADR-0012 |
 | **Background jobs** | Two `IHostedService` registrations: `ReminderTimerService` (user-configured interval) and `FullscreenPoller` (5-second fixed interval); both hosted by .NET Generic Host | ADR-0007 |
-| **Single-instance enforcement** | Global `Mutex` named `Global\\BlinkNotifier-SingleInstance` in `App.xaml.cs`; second launch brings first instance to foreground (via `WM_USER` message) and exits | ADR-0006 |
+| **Single-instance enforcement** | Global `Mutex` named `Global\\BlinkNotifier-SingleInstance` in `App.xaml.cs`; second instance calls `Application.Shutdown(0)` and exits silently (tray icon remains accessible) | ADR-0006 |
 | **Outbox / idempotency** | Not required — all side effects are local and fire-and-forget; no external system whose delivery must be guaranteed | ADR-0016 |
 | **GDPR / PII** | No personal data collected or transmitted; `[Pii]` attribute inapplicable; Store privacy policy at `docs/privacy.html` states "no data collected" | ADR-0009 |
 | **Accessibility** | All WPF controls set `AutomationProperties.Name`; tray icon sets `ToolTipText`; toast action buttons inherit accessible names from button label text; verified with Accessibility Insights for Windows | SPEC regulatory constraint |
