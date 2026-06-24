@@ -43,22 +43,31 @@ public sealed class TrayIconService : IDisposable
         _taskbarIcon.ContextMenu = BuildContextMenu();
         _taskbarIcon.DataContext = _viewModel;
 
+        // Capture dispatcher once — FullscreenPoller fires TrayIconStateChanged on a
+        // background thread, and DependencyObject.SetValue requires the owner thread.
+        var dispatcher = _taskbarIcon.Dispatcher;
+
         _viewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(TrayIconViewModel.ToolTip))
-                _taskbarIcon.ToolTipText = _viewModel.ToolTip;
-            if (e.PropertyName == nameof(TrayIconViewModel.IsRunning))
-                _taskbarIcon.Icon = _viewModel.IsPaused ? _iconPaused
-                                  : _viewModel.IsRunning ? _iconActive
-                                  : _iconStopped;
+            if (e.PropertyName != nameof(TrayIconViewModel.ToolTip) &&
+                e.PropertyName != nameof(TrayIconViewModel.IsRunning))
+                return;
+            dispatcher.Invoke(() =>
+            {
+                if (e.PropertyName == nameof(TrayIconViewModel.ToolTip))
+                    _taskbarIcon.ToolTipText = _viewModel.ToolTip;
+                if (e.PropertyName == nameof(TrayIconViewModel.IsRunning))
+                    _taskbarIcon.Icon = _viewModel.IsPaused ? _iconPaused
+                                      : _viewModel.IsRunning ? _iconActive
+                                      : _iconStopped;
+            });
         };
 
         _viewModel.TrayIconStateChanged += isPaused =>
-        {
-            _taskbarIcon.Icon = isPaused ? _iconPaused
-                              : _viewModel.IsRunning ? _iconActive
-                              : _iconStopped;
-        };
+            dispatcher.Invoke(() =>
+                _taskbarIcon.Icon = isPaused ? _iconPaused
+                                  : _viewModel.IsRunning ? _iconActive
+                                  : _iconStopped);
 
         _logger.LogInformation("Tray icon initialised.");
     }
