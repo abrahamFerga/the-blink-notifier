@@ -16,7 +16,7 @@ For Store distribution, upload the MSIX through Microsoft Partner Center. The ap
 
 | Workflow | Trigger | Output |
 |---|---|---|
-| `ci.yml` | Push / PR to `main` or `feat/**` | Build + test |
+| `ci.yml` | Push / PR to `main` or `feat/**`; manual dispatch | Build + test |
 | `release.yml` | Git tag `v*` | Draft GitHub Release with portable ZIP + MSIX |
 | `pages.yml` | Push to `main` (docs/ changed) | GitHub Pages deployment |
 
