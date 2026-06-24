@@ -91,7 +91,8 @@ public sealed class TrayIconService : IDisposable
         using var bmp = new Bitmap(16, 16, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
         using var g = Graphics.FromImage(bmp);
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-        g.FillEllipse(new SolidBrush(color), 1, 1, 13, 13);
+        using var brush = new SolidBrush(color);
+        g.FillEllipse(brush, 1, 1, 13, 13);
 
         // GetHicon returns a Win32 HICON we must destroy; Clone copies it into managed memory.
         var hIcon = bmp.GetHicon();
