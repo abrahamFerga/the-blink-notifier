@@ -12,6 +12,45 @@ Double-click `BlinkNotifier-x.y.z.msix`. Windows installs the package under `%Pr
 
 For Store distribution, upload the MSIX through Microsoft Partner Center. The app must be re-signed with a Partner Center–trusted certificate before Store submission; the self-signed certificate in CI is for smoke testing only.
 
+### Microsoft Store submission checklist
+
+**Prerequisites**
+
+- [ ] Microsoft Partner Center account enrolled in the Windows developer program (one-time $19 USD fee)
+- [ ] Code-signing certificate trusted by Partner Center (EV cert from DigiCert / Sectigo, or use Partner Center's own managed signing)
+- [ ] GitHub Pages enabled and `docs/privacy.html` accessible at its public URL (repo Settings → Pages → Source: GitHub Actions)
+
+**Package preparation**
+
+- [ ] Replace placeholder icons in `src/BlinkNotifier.Packaging/Images/` with real artwork:
+  - `Square44x44Logo.png` — 44×44 px (also needed at 55×55, 66×66, 88×88, 176×176 — use scale folders or a single source)
+  - `Square150x150Logo.png` — 150×150 px
+  - `Wide310x150Logo.png` — 310×150 px
+  - `StoreLogo.png` — 50×50 px
+  - `SplashScreen.png` — 620×300 px
+- [ ] Update `Package.appxmanifest` `Publisher` field to match the certificate's Subject DN exactly
+- [ ] Trigger `release.yml` via `git tag v1.0.0 && git push --tags` — produces a draft GitHub Release with a signed MSIX
+- [ ] Download the MSIX from the draft release and smoke-test installation on a clean Windows machine
+
+**Store listing (Partner Center → Apps → New product)**
+
+- [ ] Reserve the app name "Blink Notifier" (or localised variant)
+- [ ] Category: **Productivity** → Utilities & tools
+- [ ] Age rating: complete the IARC questionnaire (expected result: **3+** / Everyone — no violence, no in-app purchases, no personal data collection)
+- [ ] Privacy policy URL: the GitHub Pages URL for `docs/privacy.html`
+- [ ] Support contact: your email or a GitHub Issues URL
+- [ ] Short description (≤ 200 chars): _"A lightweight system-tray reminder to follow the 20-20-20 eye-care rule. Configurable interval, schedule, and fullscreen auto-pause."_
+- [ ] Long description (≤ 10 000 chars): expand from README "Why" + "Jobs it does" sections
+- [ ] Keywords: `eye strain`, `20-20-20`, `eye care`, `productivity`, `reminder`, `screen break`
+- [ ] Screenshots: at least 1 desktop screenshot (1366×768 minimum); recommended — tray icon + context menu, toast notification, Settings window
+- [ ] Pricing: **Free**, no in-app purchases
+
+**Submission**
+
+- [ ] Upload the signed MSIX produced by `release.yml`
+- [ ] Submit for certification (typically 1–3 business days)
+- [ ] After approval: publish the GitHub Release draft and update `CHANGELOG.md` with the actual release date
+
 ### GitHub Actions CI/CD
 
 | Workflow | Trigger | Output |

@@ -1,5 +1,6 @@
 version: 2
 updates:
+  # Root — src projects and solution-level packages
   - package-ecosystem: nuget
     directory: "/"
     schedule:
@@ -13,11 +14,49 @@ updates:
       serilog:
         patterns:
           - "Serilog*"
-      xunit:
+
+  # Test projects — explicit entries so grouped updates cover all three
+  - package-ecosystem: nuget
+    directory: "/tests/BlinkNotifier.Core.Tests"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      test-tooling:
         patterns:
           - "xunit*"
           - "Microsoft.NET.Test.Sdk"
           - "coverlet*"
+          - "Microsoft.Extensions.TimeProvider.Testing"
+
+  - package-ecosystem: nuget
+    directory: "/tests/BlinkNotifier.Settings.Tests"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      test-tooling:
+        patterns:
+          - "xunit*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet*"
+          - "Microsoft.Extensions.Options"
+
+  - package-ecosystem: nuget
+    directory: "/tests/BlinkNotifier.Integration.Tests"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      test-tooling:
+        patterns:
+          - "xunit*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet*"
+          - "Microsoft.Extensions.Logging.Abstractions"
 
   - package-ecosystem: github-actions
     directory: "/"
