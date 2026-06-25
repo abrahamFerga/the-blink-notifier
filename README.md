@@ -36,7 +36,7 @@ Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) o
 git clone https://github.com/abrahamFerga/the-blink-notifier.git
 cd the-blink-notifier
 dotnet build --configuration Release
-dotnet test  --configuration Release
+dotnet test  --configuration Release --no-build
 ```
 
 Run the app:
