@@ -15,6 +15,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<ToastDispatcher>();
         services.AddSingleton<IToastDispatcher>(sp => sp.GetRequiredService<ToastDispatcher>());
         services.AddSingleton<ReminderTimerService>();
+        services.AddSingleton<ITimerControl>(sp => sp.GetRequiredService<ReminderTimerService>());
         services.AddHostedService(sp => sp.GetRequiredService<ReminderTimerService>());
         services.AddHostedService<FullscreenPoller>();
         return services;

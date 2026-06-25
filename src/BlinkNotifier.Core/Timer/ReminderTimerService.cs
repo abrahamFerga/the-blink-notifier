@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BlinkNotifier.Core.Timer;
 
-public sealed class ReminderTimerService : BackgroundService
+public sealed class ReminderTimerService : BackgroundService, ITimerControl
 {
     private readonly SnoozeStateMachine _snooze;
     private readonly FullscreenState _fullscreen;

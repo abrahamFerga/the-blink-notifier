@@ -12,7 +12,7 @@ namespace BlinkNotifier.App.TrayIcon;
 
 public sealed class TrayIconViewModel : INotifyPropertyChanged, IDisposable
 {
-    private readonly ReminderTimerService _timer;
+    private readonly ITimerControl _timer;
     private readonly FullscreenState _fullscreen;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly ILogger<TrayIconViewModel> _logger;
@@ -21,7 +21,7 @@ public sealed class TrayIconViewModel : INotifyPropertyChanged, IDisposable
     private bool _isPaused;
 
     public TrayIconViewModel(
-        ReminderTimerService timer,
+        ITimerControl timer,
         FullscreenState fullscreen,
         IHostApplicationLifetime lifetime,
         ILogger<TrayIconViewModel> logger)

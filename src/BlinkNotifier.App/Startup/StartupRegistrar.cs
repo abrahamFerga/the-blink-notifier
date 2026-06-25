@@ -4,7 +4,7 @@ using Microsoft.Win32;
 
 namespace BlinkNotifier.App.Startup;
 
-public sealed class StartupRegistrar(ILogger<StartupRegistrar> logger)
+public sealed class StartupRegistrar(ILogger<StartupRegistrar> logger) : IStartupRegistrar
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunKeyName = "BlinkNotifier";

@@ -75,7 +75,7 @@ public partial class App : Application
         builder.Services.AddSingleton<TrayIconService>();
         builder.Services.AddTransient<SettingsWindow>();
         builder.Services.AddTransient<SettingsViewModel>();
-        builder.Services.AddTransient<StartupRegistrar>();
+        builder.Services.AddTransient<IStartupRegistrar, StartupRegistrar>();
         builder.Services.AddTransient<FirstRunWizard>();
 
         _host = builder.Build();

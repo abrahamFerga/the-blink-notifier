@@ -13,8 +13,8 @@ namespace BlinkNotifier.App.Settings;
 public sealed class SettingsViewModel : INotifyPropertyChanged
 {
     private readonly ISettingsStore _store;
-    private readonly StartupRegistrar _startup;
-    private readonly ReminderTimerService _timer;
+    private readonly IStartupRegistrar _startup;
+    private readonly ITimerControl _timer;
     private readonly ILogger<SettingsViewModel> _logger;
 
     private int _intervalMinutes = 20;
@@ -33,8 +33,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 
     public SettingsViewModel(
         ISettingsStore store,
-        StartupRegistrar startup,
-        ReminderTimerService timer,
+        IStartupRegistrar startup,
+        ITimerControl timer,
         ILogger<SettingsViewModel> logger)
     {
         _store = store;
