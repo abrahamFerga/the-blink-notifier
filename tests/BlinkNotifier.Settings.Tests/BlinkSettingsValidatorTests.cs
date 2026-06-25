@@ -50,6 +50,20 @@ public sealed class BlinkSettingsValidatorTests
     }
 
     [Fact]
+    public void StartTimeEqualToEndTime_WhenScheduleEnabled_FailsValidation()
+    {
+        // Validator uses >= so equal times (zero-width window) are also rejected.
+        var s = new BlinkSettings
+        {
+            ScheduleEnabled = true,
+            ScheduleStartTime = TimeSpan.FromHours(9),
+            ScheduleEndTime = TimeSpan.FromHours(9),
+        };
+        var result = _sut.Validate(null, s);
+        Assert.NotEqual(ValidateOptionsResult.Success, result);
+    }
+
+    [Fact]
     public void EmptySnoozeOptions_FailsValidation()
     {
         var s = new BlinkSettings { SnoozeOptionsMinutes = [] };

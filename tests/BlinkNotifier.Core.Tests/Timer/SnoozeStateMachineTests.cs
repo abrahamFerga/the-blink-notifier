@@ -67,6 +67,19 @@ public sealed class SnoozeStateMachineTests
         Assert.False(sm.IsSnoozed);
     }
 
+    [Fact]
+    public void IsSnoozed_ReturnsFalse_ExactlyAtDeadline()
+    {
+        // IsSnoozed uses strict < so at exactly SnoozedUntil the snooze is considered expired.
+        var clock = new FakeTimeProvider();
+        var sm = new SnoozeStateMachine(clock);
+        sm.Snooze(TimeSpan.FromMinutes(5));
+
+        clock.Advance(TimeSpan.FromMinutes(5)); // exactly at the deadline, not past it
+
+        Assert.False(sm.IsSnoozed);
+    }
+
     [Theory]
     [InlineData(5)]
     [InlineData(15)]
