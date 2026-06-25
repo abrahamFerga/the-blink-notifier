@@ -26,7 +26,7 @@ Container_Boundary(core, "BlinkNotifier.Core") {
 }
 
 Container_Ext(app, "BlinkNotifier.App", "WPF .NET 10", "Subscribes to FullscreenChanged for tray badge; issues Start/Stop commands to ReminderTimerService")
-Container_Ext(settings_lib, "BlinkNotifier.Settings", ".NET 10 library", "Provides IOptions<BlinkSettings> to ReminderTimerService and ScheduleGuard")
+Container_Ext(settings_lib, "BlinkNotifier.Settings", ".NET 10 library", "Provides ISettingsStore; LoadAsync() called by ReminderTimerService each tick; BlinkSettings value passed to ScheduleGuard.ShouldFire()")
 System_Ext(wintoast, "Windows Notification System", "WinRT")
 
 Rel(app, timer_svc, "Start / Stop via IHostedService control", "Generic Host")
@@ -45,7 +45,7 @@ Rel_Back(toast_handler, wintoast, "Receives Snooze/Dismiss activation args", "CO
 Rel(toast_handler, snooze_sm, "Snooze(duration) or Clear() on respective action")
 Rel(toast_handler, timer_svc, "ResetTimer() on snooze and dismiss")
 
-Rel(timer_svc, settings_lib, "Reads ReminderIntervalMinutes", "IOptions<BlinkSettings>")
+Rel(timer_svc, settings_lib, "Reads ReminderIntervalMinutes and schedule config", "ISettingsStore.LoadAsync()")
 Rel(schedule_guard, settings_lib, "Reads schedule fields", "BlinkSettings parameter")
 
 @enduml

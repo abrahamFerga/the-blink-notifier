@@ -30,7 +30,7 @@ service, daemon, or API server.
 |---|---|---|---|
 | `BlinkNotifier.App` | WPF application project | WPF .NET 10, Generic Host | Entry point; single-instance enforcement; system tray icon; first-run wizard; settings window shell |
 | `BlinkNotifier.Core` | Class library | .NET 10, WinRT interop | Timer engine, toast dispatch, fullscreen polling, snooze state machine, COM activation callback handler |
-| `BlinkNotifier.Settings` | Class library | .NET 10, System.Text.Json | Settings model (`BlinkSettings`), `IOptions<T>` validation, JSON persistence to `%LOCALAPPDATA%` |
+| `BlinkNotifier.Settings` | Class library | .NET 10, System.Text.Json | Settings model (`BlinkSettings`), standalone `BlinkSettingsValidator` (not wired into `IOptions<T>` DI), JSON persistence to `%LOCALAPPDATA%` |
 | `BlinkSettings.json` | Persistent store | JSON file at `%LOCALAPPDATA%\BlinkNotifier\settings.json` | All app state: interval, schedule, snooze options, auto-launch flag, schema version |
 | `Windows Notification System` | External system | WinRT `ToastNotificationManager` via `CommunityToolkit.WinUI.Notifications` | Renders toast notifications; routes COM activation callbacks |
 

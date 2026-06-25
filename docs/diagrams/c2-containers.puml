@@ -13,7 +13,7 @@ System_Boundary(blink, "The Blink Notifier (.exe process)") {
 
     Container(core, "BlinkNotifier.Core", ".NET 10 class library\nWindows P/Invoke", "Reminder timer (IHostedService); snooze state machine; schedule guard; fullscreen poller (IHostedService, 5 s); toast dispatcher; COM activation callback handler")
 
-    Container(settings_lib, "BlinkNotifier.Settings", ".NET 10 class library\nSystem.Text.Json", "BlinkSettings POCO; IOptions<T> validation at startup; JSON persistence (atomic write via temp-rename); schema migration guard")
+    Container(settings_lib, "BlinkNotifier.Settings", ".NET 10 class library\nSystem.Text.Json", "BlinkSettings POCO; standalone BlinkSettingsValidator (not wired into IOptions<T> DI); JSON persistence (atomic write via temp-rename); schema migration guard")
 
 }
 
