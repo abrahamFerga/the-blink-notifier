@@ -7,18 +7,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Fixed
-
-- Schedule settings could be saved with no active days selected when checkboxes were changed
-  while the schedule was already enabled (day-setter validation was not re-triggered).
-- GDI+ `SolidBrush` resource leak in `TrayIconService` — brush is now disposed after
-  each tray icon is rendered at startup.
-- Fullscreen suppression restarted the full reminder interval instead of firing as soon as
-  fullscreen ended ("resumes automatically" per ARCH.md). Same fix applied to schedule-window
-  suppression: notification fires when the window opens, not after another full interval.
-- `.tmp` settings file not deleted when `SaveAsync` is cancelled mid-write.
-- Changing the reminder interval in Settings did not take effect until the current countdown
-  finished. The timer now resets immediately when settings are saved.
+---
 
 ## [1.0.0] — planned
 
@@ -41,3 +30,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Rolling structured log at `%LOCALAPPDATA%\BlinkNotifier\logs\` (7-day retention).
 - Portable self-contained EXE (no installer, no admin rights) and MSIX installer in GitHub Releases.
 - MIT license.
+
+### Fixed
+
+- Schedule settings could be saved with no active days selected when checkboxes were changed
+  while the schedule was already enabled (day-setter validation was not re-triggered).
+- GDI+ `SolidBrush` resource leak in `TrayIconService` — brush is now disposed after
+  each tray icon is rendered at startup.
+- Fullscreen suppression restarted the full reminder interval instead of firing as soon as
+  fullscreen ended ("resumes automatically" per ARCH.md). Same fix applied to schedule-window
+  suppression: notification fires when the window opens, not after another full interval.
+- `.tmp` settings file not deleted when `SaveAsync` is cancelled mid-write.
+- Changing the reminder interval in Settings did not take effect until the current countdown
+  finished. The timer now resets immediately when settings are saved.
