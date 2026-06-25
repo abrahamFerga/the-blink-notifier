@@ -1,0 +1,34 @@
+<Window x:Class="BlinkNotifier.App.Wizard.FirstRunWizard"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Welcome to Blink Notifier"
+        Width="420" Height="280"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+
+    <StackPanel Margin="24">
+
+        <TextBlock Text="Welcome to Blink Notifier"
+                   FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,16">
+            Blink Notifier reminds you to look away from your screen every 20 minutes
+            to reduce eye strain. All reminders stay on this device — no account, no internet.
+        </TextBlock>
+
+        <CheckBox x:Name="AutoLaunchCheckBox"
+                  Content="Start Blink Notifier automatically when Windows starts (recommended)"
+                  IsChecked="True"
+                  AutomationProperties.Name="Start automatically with Windows"
+                  Margin="0,0,0,20" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Start Protecting My Eyes"
+                    AutomationProperties.Name="Finish setup and start"
+                    Width="200" Height="32"
+                    Click="OnFinish" />
+        </StackPanel>
+
+    </StackPanel>
+</Window>

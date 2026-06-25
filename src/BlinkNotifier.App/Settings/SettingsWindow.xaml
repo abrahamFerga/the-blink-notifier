@@ -1,0 +1,91 @@
+<Window x:Class="BlinkNotifier.App.Settings.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
+        xmlns:local="clr-namespace:BlinkNotifier.App.Settings"
+        Title="Blink Notifier — Settings"
+        Width="400" Height="480"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+
+            <!-- Reminder interval -->
+            <Label Content="Reminder interval (minutes):"
+                   automation:AutomationProperties.Name="Reminder interval label" />
+            <Slider x:Name="IntervalSlider"
+                    Minimum="1" Maximum="60" TickFrequency="1" IsSnapToTickEnabled="True"
+                    Value="{Binding IntervalMinutes, UpdateSourceTrigger=PropertyChanged}"
+                    AutomationProperties.Name="Reminder interval"
+                    AutomationProperties.HelpText="Drag to set how often reminders fire (1–60 minutes)" />
+            <TextBlock Text="{Binding IntervalMinutes, StringFormat='{}{0} minutes'}"
+                       HorizontalAlignment="Center" Margin="0,2,0,12" />
+
+            <!-- Schedule -->
+            <CheckBox Content="Enable schedule (only remind during set hours)"
+                      IsChecked="{Binding ScheduleEnabled}"
+                      AutomationProperties.Name="Enable schedule"
+                      Margin="0,0,0,8" />
+
+            <GroupBox Header="Active hours" Margin="0,0,0,8"
+                      IsEnabled="{Binding ScheduleEnabled}">
+                <StackPanel Margin="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Content="From:" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding ScheduleStart, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="Schedule start time (HH:MM)"
+                                 AutomationProperties.HelpText="24-hour time, e.g. 09:00"
+                                 Margin="4,0,12,0" />
+                        <Label Grid.Column="2" Content="To:" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="3"
+                                 Text="{Binding ScheduleEnd, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="Schedule end time (HH:MM)"
+                                 AutomationProperties.HelpText="24-hour time, e.g. 18:00"
+                                 Margin="4,0,0,0" />
+                    </Grid>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Active days" Margin="0,0,0,12"
+                      IsEnabled="{Binding ScheduleEnabled}">
+                <WrapPanel Margin="8" Orientation="Horizontal">
+                    <CheckBox Content="Mon" IsChecked="{Binding Monday}"    Margin="0,0,12,4" AutomationProperties.Name="Monday" />
+                    <CheckBox Content="Tue" IsChecked="{Binding Tuesday}"   Margin="0,0,12,4" AutomationProperties.Name="Tuesday" />
+                    <CheckBox Content="Wed" IsChecked="{Binding Wednesday}" Margin="0,0,12,4" AutomationProperties.Name="Wednesday" />
+                    <CheckBox Content="Thu" IsChecked="{Binding Thursday}"  Margin="0,0,12,4" AutomationProperties.Name="Thursday" />
+                    <CheckBox Content="Fri" IsChecked="{Binding Friday}"    Margin="0,0,12,4" AutomationProperties.Name="Friday" />
+                    <CheckBox Content="Sat" IsChecked="{Binding Saturday}"  Margin="0,0,12,4" AutomationProperties.Name="Saturday" />
+                    <CheckBox Content="Sun" IsChecked="{Binding Sunday}"    Margin="0,0,12,4" AutomationProperties.Name="Sunday" />
+                </WrapPanel>
+            </GroupBox>
+
+            <!-- Startup -->
+            <CheckBox Content="Start automatically with Windows"
+                      IsChecked="{Binding AutoLaunchEnabled}"
+                      AutomationProperties.Name="Start automatically with Windows"
+                      Margin="0,0,0,12" />
+
+            <!-- Validation -->
+            <TextBlock Text="{Binding ValidationError}"
+                       Foreground="Red"
+                       Visibility="{Binding ValidationError,
+                           Converter={x:Static local:NullToVisibilityConverter.Instance}}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8" />
+
+            <Button Content="Save" Command="{Binding SaveCommand}"
+                    AutomationProperties.Name="Save settings"
+                    Width="80" HorizontalAlignment="Right" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>

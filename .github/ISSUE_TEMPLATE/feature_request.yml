@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest an idea for Blink Notifier
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea? Great — describe the problem you're trying to solve and the
+        solution you have in mind.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: |
+        Describe the situation where you felt Blink Notifier fell short.
+        E.g. "I want reminders to pause automatically when I'm in a video call."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Any other approaches or workarounds you've tried.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: How important is this to you?
+      options:
+        - Nice to have
+        - Would significantly improve my daily use
+        - Blocking me from using the app
+    validations:
+      required: true
