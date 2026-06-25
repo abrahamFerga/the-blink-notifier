@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write   # gh release create
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Parse version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"           # e.g. v1.2.3
+          $ver = $tag.TrimStart('v')                 # e.g. 1.2.3
+          $quad = "$ver.0"                           # e.g. 1.2.3.0 (MSIX needs 4 parts)
+          echo "semver=$ver"  >> $env:GITHUB_OUTPUT
+          echo "quad=$quad"   >> $env:GITHUB_OUTPUT
+
+      - name: Build & test
+        run: |
+          dotnet restore --locked-mode
+          dotnet build --configuration Release --no-restore
+          dotnet test  --configuration Release --no-build
+
+      # ── Portable self-contained EXE ────────────────────────────────────────
+      - name: Publish portable EXE
+        run: >
+          dotnet publish src/BlinkNotifier.App/BlinkNotifier.App.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:DebugType=embedded
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          --output publish/portable
+
+      - name: Zip portable EXE
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish/portable/BlinkNotifier.App.exe `
+            -DestinationPath "publish/BlinkNotifier-${{ steps.version.outputs.semver }}-win-x64.zip"
+
+      # ── MSIX package ───────────────────────────────────────────────────────
+      - name: Generate icon assets
+        shell: pwsh
+        run: pwsh src/BlinkNotifier.Packaging/Images/generate-icons.ps1
+
+      - name: Locate MakeAppx.exe
+        id: makeappx
+        shell: pwsh
+        run: |
+          $sdk = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "MakeAppx.exe" -Recurse |
+                 Where-Object { $_.FullName -match "x64" } |
+                 Sort-Object FullName -Descending |
+                 Select-Object -First 1
+          if (-not $sdk) { throw "MakeAppx.exe not found" }
+          echo "path=$($sdk.DirectoryName)" >> $env:GITHUB_OUTPUT
+
+      - name: Stage MSIX layout
+        shell: pwsh
+        run: |
+          $layout = "publish/msix-layout"
+          # Copy published app into the layout
+          dotnet publish src/BlinkNotifier.App/BlinkNotifier.App.csproj `
+            --configuration Release --runtime win-x64 --self-contained true `
+            --output "$layout/BlinkNotifier.App"
+
+          # Copy manifest and images
+          $dest = "$layout"
+          Copy-Item src/BlinkNotifier.Packaging/Package.appxmanifest $dest/AppxManifest.xml
+          New-Item -ItemType Directory -Force "$dest/Images" | Out-Null
+          Copy-Item src/BlinkNotifier.Packaging/Images/*.png "$dest/Images/"
+
+          # Patch version in manifest
+          $xml = Get-Content "$dest/AppxManifest.xml" -Raw
+          $xml = $xml -replace 'Version="1.0.0.0"', 'Version="${{ steps.version.outputs.quad }}"'
+          Set-Content "$dest/AppxManifest.xml" $xml
+
+      - name: Create unsigned MSIX
+        shell: pwsh
+        run: |
+          $makeappx = "${{ steps.makeappx.outputs.path }}\MakeAppx.exe"
+          & $makeappx pack /d publish/msix-layout `
+            /p "publish/BlinkNotifier-${{ steps.version.outputs.semver }}.msix" /o
+
+      - name: Sign MSIX (self-signed — replace with real cert for Store)
+        shell: pwsh
+        run: |
+          $signtool = "${{ steps.makeappx.outputs.path }}\SignTool.exe"
+          # Create a temporary self-signed cert for CI smoke-test
+          $cert = New-SelfSignedCertificate `
+            -Subject "CN=Abraham Fernandez" `
+            -Type CodeSigning `
+            -CertStoreLocation Cert:\CurrentUser\My `
+            -NotAfter (Get-Date).AddYears(1)
+          & $signtool sign /fd SHA256 /a `
+            /sha1 $cert.Thumbprint `
+            "publish/BlinkNotifier-${{ steps.version.outputs.semver }}.msix"
+
+      # ── GitHub Release ─────────────────────────────────────────────────────
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${{ github.ref_name }}"
+          "publish/BlinkNotifier-${{ steps.version.outputs.semver }}-win-x64.zip#Portable EXE (no install required)"
+          "publish/BlinkNotifier-${{ steps.version.outputs.semver }}.msix#MSIX installer"
+          --title "Blink Notifier ${{ steps.version.outputs.semver }}"
+          --notes-file CHANGELOG.md
+          --draft

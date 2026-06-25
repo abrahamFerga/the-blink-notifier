@@ -46,6 +46,24 @@ public partial class App : Application
                 restrictedToMinimumLevel: LogEventLevel.Error)
             .CreateLogger();
 
+        // Catch-all for background-thread faults — log then let the runtime terminate.
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            Log.Fatal((Exception)args.ExceptionObject, "Unhandled background thread exception.");
+            Log.CloseAndFlush();
+        };
+
+        // Catch-all for UI-thread faults — log, show a brief message, keep the app running.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            Log.Fatal(args.Exception, "Unhandled dispatcher exception.");
+            args.Handled = true;
+            MessageBox.Show(
+                $"An unexpected error occurred:\n{args.Exception.Message}\n\nBlink Notifier will continue running.",
+                "Blink Notifier — Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        };
+
         // Generic Host (ADR-0007)
         var builder = Host.CreateApplicationBuilder(e.Args);
         builder.Logging.ClearProviders();
@@ -64,7 +82,7 @@ public partial class App : Application
 
         // Wire toast activation before starting background services (ADR-0003, ADR-0005)
         var snooze = _host.Services.GetRequiredService<SnoozeStateMachine>();
-        var timer  = _host.Services.GetRequiredService<ReminderTimerService>();
+        var timer = _host.Services.GetRequiredService<ReminderTimerService>();
         var logger = _host.Services.GetRequiredService<ILogger<App>>();
         ToastActivationHandler.Register(snooze, timer, logger);
 
@@ -88,6 +106,7 @@ public partial class App : Application
     {
         _host?.Services.GetRequiredService<TrayIconService>().Dispose();
         _host?.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+        _host?.Dispose(); // disposes IServiceProvider → calls Dispose() on IDisposable singletons
         Log.CloseAndFlush();
         _singleInstanceMutex?.Dispose();
         base.OnExit(e);

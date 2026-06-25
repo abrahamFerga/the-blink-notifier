@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/BlinkNotifier.Core.Tests/BlinkNotifier.Core.Tests.csproj" />
+    <Project Path="tests/BlinkNotifier.Integration.Tests/BlinkNotifier.Integration.Tests.csproj" />
     <Project Path="tests/BlinkNotifier.Settings.Tests/BlinkNotifier.Settings.Tests.csproj" />
   </Folder>
 </Solution>

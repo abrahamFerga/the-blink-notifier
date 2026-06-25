@@ -9,7 +9,7 @@ internal sealed class RelayCommand(Action execute, Func<bool>? canExecute = null
     public void Execute(object? p) => execute();
     public event EventHandler? CanExecuteChanged
     {
-        add    => CommandManager.RequerySuggested += value;
+        add => CommandManager.RequerySuggested += value;
         remove => CommandManager.RequerySuggested -= value;
     }
 }

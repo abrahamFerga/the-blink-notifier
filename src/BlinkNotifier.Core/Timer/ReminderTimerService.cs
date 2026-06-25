@@ -13,8 +13,9 @@ public sealed class ReminderTimerService : BackgroundService
     private readonly SnoozeStateMachine _snooze;
     private readonly FullscreenState _fullscreen;
     private readonly ISettingsStore _settingsStore;
-    private readonly ToastDispatcher _toastDispatcher;
+    private readonly IToastDispatcher _toastDispatcher;
     private readonly ILogger<ReminderTimerService> _logger;
+    private readonly TimeProvider _timeProvider;
 
     // Replacing this CTS cancels the current Task.Delay, causing the loop to restart from now.
     private CancellationTokenSource _timerReset = new();
@@ -24,14 +25,16 @@ public sealed class ReminderTimerService : BackgroundService
         SnoozeStateMachine snooze,
         FullscreenState fullscreen,
         ISettingsStore settingsStore,
-        ToastDispatcher toastDispatcher,
-        ILogger<ReminderTimerService> logger)
+        IToastDispatcher toastDispatcher,
+        ILogger<ReminderTimerService> logger,
+        TimeProvider? timeProvider = null)
     {
         _snooze = snooze;
         _fullscreen = fullscreen;
         _settingsStore = settingsStore;
         _toastDispatcher = toastDispatcher;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public void Stop() => _running = false;
@@ -47,6 +50,12 @@ public sealed class ReminderTimerService : BackgroundService
     {
         var old = Interlocked.Exchange(ref _timerReset, new CancellationTokenSource());
         old.Cancel();
+    }
+
+    public override void Dispose()
+    {
+        _timerReset.Dispose();
+        base.Dispose();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -69,7 +78,7 @@ public sealed class ReminderTimerService : BackgroundService
             TimeSpan waitFor;
             if (_snooze.IsSnoozed)
             {
-                waitFor = _snooze.SnoozedUntil - DateTimeOffset.UtcNow;
+                waitFor = _snooze.SnoozedUntil - _timeProvider.GetUtcNow();
                 if (waitFor <= TimeSpan.Zero)
                 {
                     _snooze.Clear();
@@ -89,7 +98,7 @@ public sealed class ReminderTimerService : BackgroundService
             using var combined = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, resetToken);
             try
             {
-                await Task.Delay(waitFor, combined.Token);
+                await Task.Delay(waitFor, _timeProvider, combined.Token);
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
@@ -103,19 +112,27 @@ public sealed class ReminderTimerService : BackgroundService
 
             _snooze.Clear();
 
-            if (_fullscreen.IsFullscreenActive)
+            // Poll until fullscreen ends — don't restart the full interval while blocked.
+            // If a new snooze arrives during polling, break out so it is respected.
+            while (_fullscreen.IsFullscreenActive && _running && !_snooze.IsSnoozed)
             {
                 _logger.LogDebug("Fullscreen active — suppressing; retrying in 5s.");
-                try { await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken); } catch { }
-                continue;
+                try { await Task.Delay(TimeSpan.FromSeconds(5), _timeProvider, stoppingToken); }
+                catch (OperationCanceledException) { break; }
             }
+            if (stoppingToken.IsCancellationRequested) break;
+            if (!_running || _snooze.IsSnoozed) continue; // restart from top
 
-            if (!ScheduleGuard.ShouldFire(DateTimeOffset.Now, settings))
+            // Poll until in the schedule window — don't restart the full interval while blocked.
+            while (!ScheduleGuard.ShouldFire(_timeProvider.GetLocalNow(), settings)
+                   && _running && !_snooze.IsSnoozed)
             {
                 _logger.LogDebug("Outside schedule window — retrying in 60s.");
-                try { await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); } catch { }
-                continue;
+                try { await Task.Delay(TimeSpan.FromMinutes(1), _timeProvider, stoppingToken); }
+                catch (OperationCanceledException) { break; }
             }
+            if (stoppingToken.IsCancellationRequested) break;
+            if (!_running || _snooze.IsSnoozed) continue; // restart from top
 
             await _toastDispatcher.ShowAsync(stoppingToken);
             // Loop restarts from top — next interval begins from now.

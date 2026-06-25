@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 
 namespace BlinkNotifier.Settings;
 
-public sealed class JsonSettingsStore(ILogger<JsonSettingsStore> logger) : ISettingsStore
+public sealed class JsonSettingsStore : ISettingsStore
 {
-    private static readonly string SettingsPath = Path.Combine(
+    public static readonly string DefaultPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "BlinkNotifier",
         "settings.json");
@@ -17,38 +17,56 @@ public sealed class JsonSettingsStore(ILogger<JsonSettingsStore> logger) : ISett
         PropertyNameCaseInsensitive = true,
     };
 
+    private readonly ILogger<JsonSettingsStore> _logger;
+    private readonly string _settingsPath;
+
+    public JsonSettingsStore(ILogger<JsonSettingsStore> logger, string? settingsPath = null)
+    {
+        _logger = logger;
+        _settingsPath = settingsPath ?? DefaultPath;
+    }
+
     public async Task<BlinkSettings> LoadAsync(CancellationToken ct = default)
     {
-        if (!File.Exists(SettingsPath))
+        if (!File.Exists(_settingsPath))
         {
-            logger.LogInformation("Settings file not found; returning defaults.");
+            _logger.LogInformation("Settings file not found; returning defaults.");
             return new BlinkSettings();
         }
 
         try
         {
-            await using var stream = File.OpenRead(SettingsPath);
+            await using var stream = File.OpenRead(_settingsPath);
             var raw = await JsonSerializer.DeserializeAsync<BlinkSettings>(stream, JsonOptions, ct);
             return Migrate(raw ?? new BlinkSettings());
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to load settings; returning defaults.");
+            _logger.LogWarning(ex, "Failed to load settings; returning defaults.");
             return new BlinkSettings();
         }
     }
 
     public async Task SaveAsync(BlinkSettings settings, CancellationToken ct = default)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-        var tmp = SettingsPath + ".tmp";
+        Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
+        var tmp = _settingsPath + ".tmp";
 
-        await using (var stream = File.Create(tmp))
-            await JsonSerializer.SerializeAsync(stream, settings, JsonOptions, ct);
+        try
+        {
+            await using (var stream = File.Create(tmp))
+                await JsonSerializer.SerializeAsync(stream, settings, JsonOptions, ct);
 
-        // Atomic replace: temp file rename prevents corruption on crash mid-write.
-        File.Replace(tmp, SettingsPath, null);
-        logger.LogDebug("Settings saved to {Path}.", SettingsPath);
+            // Atomic replace: rename temp file over destination (handles first-save and overwrite).
+            File.Move(tmp, _settingsPath, overwrite: true);
+        }
+        catch
+        {
+            File.Delete(tmp); // remove partial write so stale .tmp files don't accumulate
+            throw;
+        }
+
+        _logger.LogDebug("Settings saved to {Path}.", _settingsPath);
     }
 
     private static BlinkSettings Migrate(BlinkSettings raw) =>

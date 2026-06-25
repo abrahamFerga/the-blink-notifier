@@ -17,7 +17,7 @@ public static class ToastActivationHandler
         ILogger logger)
     {
         _snooze = snooze;
-        _timer  = timer;
+        _timer = timer;
         _logger = logger;
 
         // Wire the static OnActivated callback once per process lifetime.
@@ -25,8 +25,16 @@ public static class ToastActivationHandler
     }
 
     private static void OnActivated(ToastNotificationActivatedEventArgsCompat e)
+        => Dispatch(e.Argument, _snooze, _timer, _logger);
+
+    // internal for BlinkNotifier.Integration.Tests
+    internal static void Dispatch(
+        string rawArgs,
+        SnoozeStateMachine? snooze,
+        ReminderTimerService? timer,
+        ILogger? logger)
     {
-        var args = ToastArguments.Parse(e.Argument);
+        var args = ToastArguments.Parse(rawArgs);
 
         if (!args.TryGetValue("action", out var action)) return;
 
@@ -34,19 +42,19 @@ public static class ToastActivationHandler
         {
             case "snooze" when args.TryGetValue("duration", out var durStr)
                             && int.TryParse(durStr, out var minutes):
-                _snooze?.Snooze(TimeSpan.FromMinutes(minutes));
-                _timer?.ResetTimer(); // cancel current wait; loop will see snooze and wait N min
-                _logger?.LogInformation("Snoozed for {Minutes} minutes.", minutes);
+                snooze?.Snooze(TimeSpan.FromMinutes(minutes));
+                timer?.ResetTimer(); // cancel current wait; loop will see snooze and wait N min
+                logger?.LogInformation("Snoozed for {Minutes} minutes.", minutes);
                 break;
 
             case "dismiss":
-                _snooze?.Clear();
-                _timer?.ResetTimer(); // restart full interval from now (next fire = now + interval)
-                _logger?.LogInformation("Toast dismissed — timer reset.");
+                snooze?.Clear();
+                timer?.ResetTimer(); // restart full interval from now (next fire = now + interval)
+                logger?.LogInformation("Toast dismissed — timer reset.");
                 break;
 
             default:
-                _logger?.LogWarning("Unknown toast action: {Action}.", action);
+                logger?.LogWarning("Unknown toast action: {Action}.", action);
                 break;
         }
     }

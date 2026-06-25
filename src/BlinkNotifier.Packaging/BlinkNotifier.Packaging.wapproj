@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Windows Application Packaging Project (MSIX) for BlinkNotifier.
+  Build via Visual Studio (requires "MSIX Packaging Tools" optional component)
+  or via CI using MakeAppx.exe + SignTool.exe (see .github/workflows/release.yml).
+-->
+<Project ToolsVersion="15.0" DefaultTargets="Build"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{6F4E8A2D-3B7C-4D9E-A1F5-8C2E6D4B3A7F}</ProjectGuid>
+    <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.22621.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <MinimumVisualStudioVersion>17</MinimumVisualStudioVersion>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+    <PackageCertificateThumbprint />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest">
+      <SubType>Designer</SubType>
+    </AppxManifest>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Images\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlinkNotifier.App\BlinkNotifier.App.csproj">
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.props"
+          Condition="'$(WapProjPath)' != '' and Exists('$(WapProjPath)\Microsoft.DesktopBridge.props')" />
+  <Import Project="$(VSToolsPath)\AppxPackage\Microsoft.AppXPackage.Targets"
+          Condition="Exists('$(VSToolsPath)\AppxPackage\Microsoft.AppXPackage.Targets')" />
+
+</Project>

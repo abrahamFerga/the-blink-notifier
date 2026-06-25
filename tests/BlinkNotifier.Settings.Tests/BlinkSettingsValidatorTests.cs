@@ -26,14 +26,38 @@ public sealed class BlinkSettingsValidatorTests
         Assert.NotEqual(ValidateOptionsResult.Success, result);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(60)]
+    public void BoundaryInterval_PassesValidation(int interval)
+    {
+        var s = new BlinkSettings { ReminderIntervalMinutes = interval };
+        var result = _sut.Validate(null, s);
+        Assert.Equal(ValidateOptionsResult.Success, result);
+    }
+
     [Fact]
     public void StartTimeAfterEndTime_WhenScheduleEnabled_FailsValidation()
     {
         var s = new BlinkSettings
         {
-            ScheduleEnabled   = true,
+            ScheduleEnabled = true,
             ScheduleStartTime = TimeSpan.FromHours(18),
-            ScheduleEndTime   = TimeSpan.FromHours(9),
+            ScheduleEndTime = TimeSpan.FromHours(9),
+        };
+        var result = _sut.Validate(null, s);
+        Assert.NotEqual(ValidateOptionsResult.Success, result);
+    }
+
+    [Fact]
+    public void StartTimeEqualToEndTime_WhenScheduleEnabled_FailsValidation()
+    {
+        // Validator uses >= so equal times (zero-width window) are also rejected.
+        var s = new BlinkSettings
+        {
+            ScheduleEnabled = true,
+            ScheduleStartTime = TimeSpan.FromHours(9),
+            ScheduleEndTime = TimeSpan.FromHours(9),
         };
         var result = _sut.Validate(null, s);
         Assert.NotEqual(ValidateOptionsResult.Success, result);
@@ -45,5 +69,29 @@ public sealed class BlinkSettingsValidatorTests
         var s = new BlinkSettings { SnoozeOptionsMinutes = [] };
         var result = _sut.Validate(null, s);
         Assert.NotEqual(ValidateOptionsResult.Success, result);
+    }
+
+    [Fact]
+    public void NegativeSnoozeDuration_FailsValidation()
+    {
+        var s = new BlinkSettings { SnoozeOptionsMinutes = [5, -1] };
+        var result = _sut.Validate(null, s);
+        Assert.NotEqual(ValidateOptionsResult.Success, result);
+    }
+
+    [Fact]
+    public void EmptyActiveDays_WhenScheduleEnabled_FailsValidation()
+    {
+        var s = new BlinkSettings { ScheduleEnabled = true, ActiveDays = [] };
+        var result = _sut.Validate(null, s);
+        Assert.NotEqual(ValidateOptionsResult.Success, result);
+    }
+
+    [Fact]
+    public void EmptyActiveDays_WhenScheduleDisabled_PassesValidation()
+    {
+        var s = new BlinkSettings { ScheduleEnabled = false, ActiveDays = [] };
+        var result = _sut.Validate(null, s);
+        Assert.Equal(ValidateOptionsResult.Success, result);
     }
 }

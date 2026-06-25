@@ -5,7 +5,7 @@ back-reference); the old one is never deleted or renumbered.
 
 ---
 
-## ADR-0001: WPF (.NET 9) over WinUI 3 as the UI framework
+## ADR-0001: WPF (.NET 10) over WinUI 3 as the UI framework
 
 - **Status**: accepted
 - **Date**: 2026-06-24
@@ -14,12 +14,12 @@ back-reference); the old one is never deleted or renumbered.
 ### Context
 
 The app needs a system tray icon, a settings window, and a first-run wizard on Windows 10 and 11.
-Two viable framework choices exist: WPF (.NET 9) and WinUI 3 (Windows App SDK 1.x). The tray
+Two viable framework choices exist: WPF (.NET 10) and WinUI 3 (Windows App SDK 1.x). The tray
 icon library and toast stack decisions (ADR-0002, ADR-0003) depend on this choice.
 
 ### Decision
 
-We will use **WPF on .NET 9**. WPF supports Windows 10 1809+ (the minimum target), has the
+We will use **WPF on .NET 10**. WPF supports Windows 10 1809+ (the minimum target), has the
 mature `Hardcodet.NotifyIcon.Wpf` ecosystem for tray icons, requires no WinAppSdk bootstrapper,
 and ships no additional redistributable beyond the .NET runtime already bundled in the
 self-contained EXE.
@@ -185,20 +185,24 @@ AUMID from `AppxManifest` automatically. The portable self-contained EXE has no 
 
 ### Decision
 
-The portable EXE will **self-register its AUMID on first launch** by writing to
-`HKCU\Software\Classes\AppUserModelId\BlinkNotifier.App` (the key `CommunityToolkit.WinUI.Notifications`
-reads). `StartupRegistrar.RegisterAumidAsync()` is called at app startup before
-`ToastNotificationManagerCompat.OnActivated` is wired. No installer is required; no elevated
-permissions are needed (HKCU is per-user).
+**`Microsoft.Toolkit.Uwp.Notifications` v7.1.3 handles AUMID and COM-server registration
+automatically** for unpackaged apps when `ToastNotificationManagerCompat.OnActivated` is first
+subscribed. On the first subscription in an unpackaged process, the library writes AUMID and COM
+CLSID entries under `HKCU\Software\Classes` (using the executable path as the derived identifier)
+and registers an in-process COM activator. No installer, no elevation, and no additional code in
+`StartupRegistrar` is required.
 
 ### Consequences
 
-- **Positive**: Full action-button toasts in the portable EXE with no separate installer; HKCU
-  write requires no elevation; `ToastNotificationManagerCompat` handles the rest.
-- **Negative**: The AUMID entry persists in the registry after uninstall of the portable EXE
-  (no uninstaller exists); this is a benign orphan key in HKCU.
-- **Neutral**: The MSIX artifact does not call `RegisterAumidAsync()` — the code path is guarded
-  by `DesktopBridge.IsRunningAsPackaged()`.
+- **Positive**: Full action-button toasts in the portable EXE with no separate installer; all
+  registry writes are HKCU (per-user, no elevation); a single `OnActivated` subscription handles
+  both packaged and unpackaged paths.
+- **Negative**: The AUMID is derived from the executable path — if the user moves the portable
+  EXE to a different location, the previously-registered AUMID becomes a stale orphan in HKCU
+  and a new one is written at the new path. This is benign: old stale entries are ignored by
+  Windows and the new path registers successfully.
+- **Neutral**: The MSIX artifact's package identity is used instead; the library's unpackaged
+  code path is skipped when `Windows.ApplicationModel.Package.Current` succeeds.
 
 ### Alternatives considered
 
@@ -226,16 +230,16 @@ named pipe, or the `SingleInstance` pattern from `Microsoft.Shell`.
 ### Decision
 
 We will use a **global named `Mutex`** (`Global\BlinkNotifier-SingleInstance`) created in
-`Program.cs` before the Generic Host is built. A second launch detects the mutex is owned,
-sends a `WM_USER` window message to bring the first instance's settings window to the foreground,
-and exits with code 0.
+`App.xaml.cs` in `OnStartup`, before the Generic Host is built. A second launch detects the
+mutex is owned and calls `Application.Shutdown(0)`. For a tray-only app with no main window,
+silently exiting is sufficient — the tray icon of the first instance remains accessible.
 
 ### Consequences
 
 - **Positive**: Zero extra dependencies; robust across session boundaries (the `Global\` prefix
   makes the mutex machine-wide); straightforward lifetime tied to the process.
-- **Negative**: `WM_USER` message dispatch requires a hidden message window (`HwndSource`) in the
-  first instance to receive the activation signal; adds a small amount of Win32 wiring.
+- **Negative**: Second launch exits silently with no "bring to foreground" behavior. Acceptable
+  for a tray app; a future version could add a named-pipe signal if needed.
 - **Neutral**: The mutex name is a constant; if the MSIX and portable EXE are both installed, they
   share the mutex name and correctly prevent two coexisting instances.
 
@@ -249,7 +253,7 @@ and exits with code 0.
 
 ---
 
-## ADR-0007: .NET 9 Generic Host (IHostBuilder) as the application backbone
+## ADR-0007: .NET 10 Generic Host (IHostBuilder) as the application backbone
 
 - **Status**: accepted
 - **Date**: 2026-06-24
@@ -264,21 +268,22 @@ bare WPF `App.xaml.cs` with manual lifecycle management.
 
 ### Decision
 
-We will use the **.NET 9 Generic Host** (`Host.CreateApplicationBuilder()`) as the DI container,
+We will use the **.NET 10 Generic Host** (`Host.CreateApplicationBuilder()`) as the DI container,
 configuration system, logging infrastructure, and `IHostedService` runner. The WPF pump is
 started inside `IHostedService.StartAsync()` on the STA thread; `IHostApplicationLifetime` drives
 graceful shutdown.
 
 ### Consequences
 
-- **Positive**: `IHostedService` for both background workers; `IOptions<T>` with startup
-  validation; `ILogger<T>` unified with Serilog sink; clean `StopAsync()` cancellation via
-  `CancellationToken`; no manual thread lifecycle code.
+- **Positive**: `IHostedService` for both background workers; `ILogger<T>` unified with Serilog
+  sink; clean `StopAsync()` cancellation via `CancellationToken`; `IServiceProvider` owns singleton
+  lifetime — `_host.Dispose()` disposes all `IDisposable` singletons; no manual thread lifecycle code.
 - **Negative**: The WPF STA thread and the Generic Host's thread-pool async model require careful
   threading — the WPF dispatcher must not be blocked from a `HostedService`; all UI interactions
-  route through `Dispatcher.InvokeAsync()`.
-- **Neutral**: The Generic Host's default `appsettings.json` configuration provider is disabled;
-  configuration comes exclusively from `JsonSettingsStore` via a custom `IConfigurationSource`.
+  route through `Dispatcher.Invoke()`.
+- **Neutral**: The Generic Host's default `appsettings.json` configuration provider is unused;
+  configuration comes exclusively from `ISettingsStore.LoadAsync()` at runtime. `IOptions<T>` is
+  not registered — settings validation is performed by `SettingsViewModel.Validate()` before save.
 
 ### Alternatives considered
 
@@ -495,7 +500,7 @@ relational data.
 ### Decision
 
 We will use **`System.Text.Json` serialisation to a local JSON file** (`BlinkSettings.json`).
-No database engine, no ORM, no migrations. `System.Text.Json` ships in the .NET 9 runtime; no
+No database engine, no ORM, no migrations. `System.Text.Json` ships in the .NET 10 runtime; no
 additional dependency is required.
 
 ### Consequences

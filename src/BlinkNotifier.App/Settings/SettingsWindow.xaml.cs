@@ -9,9 +9,10 @@ public partial class SettingsWindow : Window
 
     public SettingsWindow(SettingsViewModel viewModel)
     {
-        _viewModel  = viewModel;
+        _viewModel = viewModel;
         DataContext = viewModel;
         InitializeComponent();
         Loaded += async (_, _) => await _viewModel.LoadAsync();
+        _viewModel.SaveSucceeded += (_, _) => Close();
     }
 }

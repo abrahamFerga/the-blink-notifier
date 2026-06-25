@@ -33,10 +33,10 @@ public sealed class TrayIconViewModel : INotifyPropertyChanged, IDisposable
 
         _fullscreen.FullscreenChanged += OnFullscreenChanged;
 
-        StartCommand    = new RelayCommand(OnStart,    () => !_isRunning);
-        StopCommand     = new RelayCommand(OnStop,     () => _isRunning);
+        StartCommand = new RelayCommand(OnStart, () => !_isRunning);
+        StopCommand = new RelayCommand(OnStop, () => _isRunning);
         SettingsCommand = new RelayCommand(OnSettings);
-        ExitCommand     = new RelayCommand(OnExit);
+        ExitCommand = new RelayCommand(OnExit);
     }
 
     public bool IsRunning
@@ -57,10 +57,10 @@ public sealed class TrayIconViewModel : INotifyPropertyChanged, IDisposable
             ? "Blink Notifier — Active"
             : "Blink Notifier — Stopped";
 
-    public ICommand StartCommand    { get; }
-    public ICommand StopCommand     { get; }
+    public ICommand StartCommand { get; }
+    public ICommand StopCommand { get; }
     public ICommand SettingsCommand { get; }
-    public ICommand ExitCommand     { get; }
+    public ICommand ExitCommand { get; }
 
     public event Action? SettingsRequested;
     public event Action<bool>? TrayIconStateChanged; // true = paused

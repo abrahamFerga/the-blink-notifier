@@ -1,0 +1,8 @@
+<Project>
+  <!-- Generate packages.lock.json so the dependency graph is pinned in source control. -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- In GitHub Actions (CI=true), enforce the lock file so drifted packages fail the build. -->
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+</Project>

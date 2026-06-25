@@ -13,6 +13,7 @@ public static class CoreServiceExtensions
         services.AddSingleton<SnoozeStateMachine>();
         services.AddSingleton<FullscreenState>();
         services.AddSingleton<ToastDispatcher>();
+        services.AddSingleton<IToastDispatcher>(sp => sp.GetRequiredService<ToastDispatcher>());
         services.AddSingleton<ReminderTimerService>();
         services.AddHostedService(sp => sp.GetRequiredService<ReminderTimerService>());
         services.AddHostedService<FullscreenPoller>();

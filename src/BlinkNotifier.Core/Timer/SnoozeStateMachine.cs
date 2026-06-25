@@ -1,19 +1,19 @@
 // BlinkNotifier.Core — thread-safe snooze state (ARCH.md § Components, Epic 2)
 namespace BlinkNotifier.Core.Timer;
 
-public sealed class SnoozeStateMachine
+public sealed class SnoozeStateMachine(TimeProvider? timeProvider = null)
 {
-    // Store as UTC ticks; 0 means "not snoozed".
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private long _snoozedUntilTicks;
 
-    public bool IsSnoozed => DateTimeOffset.UtcNow.Ticks < Interlocked.Read(ref _snoozedUntilTicks);
+    public bool IsSnoozed => _timeProvider.GetUtcNow().Ticks < Interlocked.Read(ref _snoozedUntilTicks);
 
     public DateTimeOffset SnoozedUntil =>
         new(Interlocked.Read(ref _snoozedUntilTicks), TimeSpan.Zero);
 
     public void Snooze(TimeSpan duration)
     {
-        var until = (DateTimeOffset.UtcNow + duration).Ticks;
+        var until = (_timeProvider.GetUtcNow() + duration).Ticks;
         Interlocked.Exchange(ref _snoozedUntilTicks, until);
     }
 
