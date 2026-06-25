@@ -27,6 +27,7 @@ dotnet test --configuration Release --no-build
 | `src/BlinkNotifier.Core` | Timer, toast, fullscreen detection, snooze state |
 | `src/BlinkNotifier.App` | WPF shell, tray icon, settings window, first-run wizard |
 | `src/BlinkNotifier.Packaging` | MSIX manifest and Store images |
+| `tests/BlinkNotifier.App.Tests` | Unit tests for App-layer ViewModels (SettingsViewModel, TrayIconViewModel) |
 | `tests/BlinkNotifier.Settings.Tests` | Unit tests for settings |
 | `tests/BlinkNotifier.Core.Tests` | Unit tests for core logic |
 | `tests/BlinkNotifier.Integration.Tests` | Integration tests for toast dispatch and activation routing |

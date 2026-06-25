@@ -45,7 +45,7 @@ shell + DI composition root; Settings = POCO + persistence).
 
 | Component | Type | Purpose |
 |---|---|---|
-| `ReminderTimerService` | `IHostedService` | Schedules periodic ticks at the user-configured interval; gates on `ScheduleGuard`, `SnoozeStateMachine`, and `FullscreenState` before dispatching; resets timer after each notification event |
+| `ReminderTimerService` | `IHostedService`, `ITimerControl` | Schedules periodic ticks at the user-configured interval; gates on `ScheduleGuard`, `SnoozeStateMachine`, and `FullscreenState` before dispatching; resets timer after each notification event |
 | `SnoozeStateMachine` | Singleton service | Thread-safe in-memory snooze state (`IsSnoozed`, `SnoozedUntil`); exposes `Snooze(duration)` and `Clear()`; snooze expiry detected by polling `IsSnoozed` in the timer loop |
 | `ScheduleGuard` | Singleton service | Pure `ShouldFire(DateTimeOffset now, BlinkSettings s)` — checks current time against `ScheduleStartTime`/`ScheduleEndTime` and `ActiveDays`; no side effects |
 | `FullscreenPoller` | `IHostedService` | 5-second poll loop; P/Invoke `GetForegroundWindow` → `GetWindowRect` → `MonitorFromWindow` → `GetMonitorInfo`; updates `FullscreenState`; publishes `FullscreenChanged` event on transition |
@@ -103,6 +103,7 @@ src/
       generate-icons.ps1              ← regenerates icon PNGs; run after updating source SVG
 
 tests/
+  BlinkNotifier.App.Tests/            ← xUnit; SettingsViewModel validation, TrayIconViewModel state (UseWPF=true; no WPF runtime needed)
   BlinkNotifier.Core.Tests/           ← xUnit; ReminderTimerService, ScheduleGuard, SnoozeStateMachine, FullscreenState
   BlinkNotifier.Settings.Tests/       ← xUnit; JSON round-trip, validator, defaults
   BlinkNotifier.Integration.Tests/    ← xUnit; toast activation routing on Windows runner

@@ -15,7 +15,21 @@ updates:
         patterns:
           - "Serilog*"
 
-  # Test projects — explicit entries so grouped updates cover all three
+  # Test projects — explicit entries so grouped updates cover all four
+  - package-ecosystem: nuget
+    directory: "/tests/BlinkNotifier.App.Tests"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      test-tooling:
+        patterns:
+          - "xunit*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet*"
+          - "Microsoft.Extensions.Logging.Abstractions"
+
   - package-ecosystem: nuget
     directory: "/tests/BlinkNotifier.Core.Tests"
     schedule:
