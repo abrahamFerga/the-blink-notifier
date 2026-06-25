@@ -17,6 +17,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   fullscreen ended ("resumes automatically" per ARCH.md). Same fix applied to schedule-window
   suppression: notification fires when the window opens, not after another full interval.
 - `.tmp` settings file not deleted when `SaveAsync` is cancelled mid-write.
+- Changing the reminder interval in Settings did not take effect until the current countdown
+  finished. The timer now resets immediately when settings are saved.
 
 ## [1.0.0] — planned
 

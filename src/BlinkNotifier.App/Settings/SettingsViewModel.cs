@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using BlinkNotifier.App.Commands;
 using BlinkNotifier.App.Startup;
+using BlinkNotifier.Core.Timer;
 using BlinkNotifier.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,7 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
 {
     private readonly ISettingsStore _store;
     private readonly StartupRegistrar _startup;
+    private readonly ReminderTimerService _timer;
     private readonly ILogger<SettingsViewModel> _logger;
 
     private int _intervalMinutes = 20;
@@ -32,10 +34,12 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public SettingsViewModel(
         ISettingsStore store,
         StartupRegistrar startup,
+        ReminderTimerService timer,
         ILogger<SettingsViewModel> logger)
     {
         _store = store;
         _startup = startup;
+        _timer = timer;
         _logger = logger;
 
         SaveCommand = new RelayCommand(async () => await SaveAsync(), CanSave);
@@ -142,6 +146,8 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
                 "Settings saved — interval={Interval}m, schedule={Schedule}, autoLaunch={AutoLaunch}.",
                 IntervalMinutes, ScheduleEnabled, AutoLaunchEnabled);
 
+            // Restart the countdown so the new interval takes effect immediately.
+            _timer.ResetTimer();
             SaveSucceeded?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)

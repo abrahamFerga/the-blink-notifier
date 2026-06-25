@@ -22,7 +22,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: Found in the About dialog or the release tag (e.g. 1.0.0)
+      description: From the release tag or download filename (e.g. 1.0.0)
       placeholder: "1.0.0"
     validations:
       required: true
