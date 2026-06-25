@@ -13,6 +13,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   while the schedule was already enabled (day-setter validation was not re-triggered).
 - GDI+ `SolidBrush` resource leak in `TrayIconService` — brush is now disposed after
   each tray icon is rendered at startup.
+- Fullscreen suppression restarted the full reminder interval instead of firing as soon as
+  fullscreen ended ("resumes automatically" per ARCH.md). Same fix applied to schedule-window
+  suppression: notification fires when the window opens, not after another full interval.
+- `.tmp` settings file not deleted when `SaveAsync` is cancelled mid-write.
 
 ## [1.0.0] — planned
 

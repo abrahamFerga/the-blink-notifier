@@ -195,6 +195,36 @@ public sealed class ReminderTimerServiceTests
     }
 
     [Fact]
+    public async Task FullscreenEnds_AfterInterval_FiresWhenFullscreenClears()
+    {
+        var clock = new FakeTimeProvider();
+        var dispatcher = new CountingDispatcher();
+        var snooze = new SnoozeStateMachine(clock);
+        var fullscreen = new FullscreenState();
+        fullscreen.SetActive(true);
+        var store = new StubSettingsStore(new BlinkSettings { ReminderIntervalMinutes = 1, ScheduleEnabled = false });
+        var sut = new ReminderTimerService(snooze, fullscreen, store, dispatcher,
+            NullLogger<ReminderTimerService>.Instance, clock);
+
+        using var cts = new CancellationTokenSource();
+        await sut.StartAsync(cts.Token);
+        await Task.Delay(50);
+
+        // Interval fires; fullscreen still active, so service enters the 5s polling loop.
+        await AdvanceAndYield(clock, TimeSpan.FromMinutes(1));
+        Assert.Equal(0, dispatcher.Count);
+
+        // Clear fullscreen then advance 5s so the polling loop re-evaluates and fires.
+        fullscreen.SetActive(false);
+        await AdvanceAndYield(clock, TimeSpan.FromSeconds(5));
+
+        Assert.Equal(1, dispatcher.Count);
+
+        await cts.CancelAsync();
+        await sut.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task FiresRepeatedly_AfterEachInterval()
     {
         var h = Build(intervalMinutes: 20);

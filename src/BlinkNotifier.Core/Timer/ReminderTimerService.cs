@@ -112,19 +112,27 @@ public sealed class ReminderTimerService : BackgroundService
 
             _snooze.Clear();
 
-            if (_fullscreen.IsFullscreenActive)
+            // Poll until fullscreen ends — don't restart the full interval while blocked.
+            // If a new snooze arrives during polling, break out so it is respected.
+            while (_fullscreen.IsFullscreenActive && _running && !_snooze.IsSnoozed)
             {
                 _logger.LogDebug("Fullscreen active — suppressing; retrying in 5s.");
-                try { await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken); } catch { }
-                continue;
+                try { await Task.Delay(TimeSpan.FromSeconds(5), _timeProvider, stoppingToken); }
+                catch (OperationCanceledException) { break; }
             }
+            if (stoppingToken.IsCancellationRequested) break;
+            if (!_running || _snooze.IsSnoozed) continue; // restart from top
 
-            if (!ScheduleGuard.ShouldFire(_timeProvider.GetLocalNow(), settings))
+            // Poll until in the schedule window — don't restart the full interval while blocked.
+            while (!ScheduleGuard.ShouldFire(_timeProvider.GetLocalNow(), settings)
+                   && _running && !_snooze.IsSnoozed)
             {
                 _logger.LogDebug("Outside schedule window — retrying in 60s.");
-                try { await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); } catch { }
-                continue;
+                try { await Task.Delay(TimeSpan.FromMinutes(1), _timeProvider, stoppingToken); }
+                catch (OperationCanceledException) { break; }
             }
+            if (stoppingToken.IsCancellationRequested) break;
+            if (!_running || _snooze.IsSnoozed) continue; // restart from top
 
             await _toastDispatcher.ShowAsync(stoppingToken);
             // Loop restarts from top — next interval begins from now.
